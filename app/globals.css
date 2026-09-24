@@ -1,18 +1,128 @@
 @import "tailwindcss";
 
+@theme inline {
+    /* Primary */
+    --color-primary: var(--primary);
+    --color-primary-container: var(--primary-container);
+    --color-primary-fixed: var(--primary-fixed);
+    --color-primary-fixed-dim: var(--primary-fixed-dim);
+    --color-on-primary: var(--on-primary);
+    --color-on-primary-fixed: var(--on-primary-fixed);
+    /* Surfaces */
+    --color-surface: var(--surface);
+    --color-surface-container-low: var(--surface-container-low);
+    --color-surface-container: var(--surface-container);
+    --color-surface-container-lowest: var(--surface-container-lowest);
+    --color-surface-container-high: var(--surface-container-high);
+    --color-on-surface: var(--on-surface);
+    --color-on-surface-variant: var(--on-surface-variant);
+    /* Status */
+    --color-tertiary: var(--tertiary);
+    --color-tertiary-container: var(--tertiary-container);
+    --color-tertiary-fixed: var(--tertiary-fixed);
+    --color-on-tertiary: var(--on-tertiary);
+    --color-secondary-container: var(--secondary-container);
+    --color-info: var(--info);
+    --color-info-container: var(--info-container);
+    --color-on-info: var(--on-info);
+    --color-error: var(--error);
+    --color-error-container: var(--error-container);
+    --color-on-error: var(--on-error);
+    /* Neutrals */
+    --color-muted: var(--muted);
+    --color-line: var(--line);
+    --color-divider: var(--divider);
+    /* Legacy aliases (pre-guide names still used by older CSS) */
+    --color-ink: var(--ink);
+    --color-text: var(--text);
+    --color-primary-main: var(--primary-main);
+    --color-tint: var(--tint);
+    --color-tint-2: var(--tint-2);
+    --color-canvas: var(--canvas);
+
+    --font-sans: var(--font-geist-sans), var(--font-inter), Arial, sans-serif;
+    --font-mono: var(--font-jetbrains-mono), var(--font-geist-mono), monospace;
+
+    /* Type scale. Usage: text-display-lg, text-label-num-sm + font-mono, … */
+    --text-display-lg: 2.5rem;
+    --text-display-lg--line-height: 3rem;
+    --text-display-lg--letter-spacing: -0.025em;
+    --text-display-lg--font-weight: 600;
+    --text-headline-lg: 1.75rem;
+    --text-headline-lg--line-height: 2.25rem;
+    --text-headline-lg--letter-spacing: -0.02em;
+    --text-headline-lg--font-weight: 600;
+    --text-headline-md: 1.375rem;
+    --text-headline-md--line-height: 1.75rem;
+    --text-headline-md--letter-spacing: -0.015em;
+    --text-headline-md--font-weight: 600;
+    --text-headline-sm: 1.125rem;
+    --text-headline-sm--line-height: 1.5rem;
+    --text-headline-sm--letter-spacing: -0.01em;
+    --text-headline-sm--font-weight: 600;
+    --text-body-md: 0.875rem;
+    --text-body-md--line-height: 1.25rem;
+    --text-body-md--font-weight: 400;
+    --text-label-num-lg: 1.25rem;
+    --text-label-num-lg--line-height: 1.5rem;
+    --text-label-num-lg--letter-spacing: -0.02em;
+    --text-label-num-lg--font-weight: 500;
+    --text-label-num-sm: 0.6875rem;
+    --text-label-num-sm--line-height: 0.875rem;
+    --text-label-num-sm--letter-spacing: 0.02em;
+    --text-label-num-sm--font-weight: 600;
+
+    /* Elevation  */
+    --shadow-header: 0 1px 8px 0 rgb(0 0 0 / 0.04);
+    --shadow-level-1: 0 1px 3px 0 rgb(15 23 42 / 0.04);
+    --shadow-level-2: 0 4px 6px 0 rgb(15 23 42 / 0.07);
+    --shadow-sheet: 0 20px 25px -5px rgb(15 23 42 / 0.08), 0 8px 10px -6px rgb(15 23 42 / 0.04);
+}
+
+/* Radii mapping */
+
 :root {
-    --ink: #131b2e;
-    --text: #464555;
-    --muted: #777587;
+    /* Primary */
     --primary: #3525cd;
-    --primary-main: #4f46e5;
-    --tint: #f2f3ff;
-    --tint-2: #eaedff;
-    --canvas: #f8f8fc;
+    --primary-container: #4f46e5;
+    --primary-fixed: #e2dfff;
+    --primary-fixed-dim: #c3c0ff;
+    --on-primary: #ffffff;
+    --on-primary-fixed: #0f0069;
+    /* Surfaces */
+    --surface: #faf8ff;
+    --surface-container-low: #f2f3ff;
+    --surface-container: #eaedff;
+    --surface-container-lowest: #ffffff;
+    --surface-container-high: #e2e7ff;
+    --on-surface: #131b2e;
+    --on-surface-variant: #464555;
+    /* Status */
+    --tertiary: #005338;
+    --tertiary-container: #006e4b;
+    --tertiary-fixed: #6ffbbe;
+    --on-tertiary: #002113;
+    --secondary-container: #2170e4;
+    --info: #0058be;
+    --info-container: #d8e2ff;
+    --on-info: #001a42;
+    --error: #ba1a1a;
+    --error-container: #ffdad6;
+    --on-error: #93000a;
+    /* Neutrals */
+    --muted: #777587;
     --line: #e5e5ee;
-    --green: #005338;
-    --font-sans: var(--font-geist-sans), Arial, sans-serif;
-    --font-mono: var(--font-geist-mono), monospace
+    --divider: #c7c4d8;
+    /* Legacy aliases (pre-guide names still used by older CSS below) */
+    --ink: var(--on-surface);
+    --text: var(--on-surface-variant);
+    --tint: var(--surface-container-low);
+    --tint-2: var(--surface-container);
+    --canvas: var(--surface);
+    --green: var(--tertiary);
+    --primary-main: var(--primary-container);
+    --font-sans: var(--font-geist-sans), var(--font-inter), Arial, sans-serif;
+    --font-mono: var(--font-jetbrains-mono), var(--font-geist-mono), monospace
 }
 
 * {
@@ -40,23 +150,6 @@ button {
     min-width: 1000px
 }
 
-.header {
-    height: 64px;
-    background: #fff;
-    border-bottom: 1px solid var(--line);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 24px
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px
-}
-
 .logo-mark {
     background: var(--primary-main);
     border-radius: 4px;
@@ -81,7 +174,6 @@ button {
     color: var(--text)
 }
 
-.header-actions,
 .utility-actions,
 .export-drawer>div {
     display: flex;
@@ -237,7 +329,7 @@ button {
 .control input:focus,
 .item-row input:focus,
 textarea:focus {
-    outline: 2px solid #c3c0ff
+    outline: 2px solid var(--primary-fixed-dim)
 }
 
 .dual {
