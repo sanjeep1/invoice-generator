@@ -12,7 +12,7 @@ export default function UtilityBar() {
                     Autosaved locally — ready to export when you are.
                 </span>
             </div>
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
                 <button className={`${actionButton} max-lg:hidden`}>↔ Switch layout</button>
                 <button className={`${actionButton} max-lg:hidden`}>⎙ Clone</button>
                 <button className={`${actionButton} max-lg:hidden`}>♧ Clear all</button>
@@ -22,7 +22,7 @@ export default function UtilityBar() {
                     ↗ Publish invoice
                 </button>
                 <button className={actionButton}>•••</button>
-            </div>
+            </div> */}
         </section>
     );
 }

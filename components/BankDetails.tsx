@@ -1,26 +1,96 @@
-import { Building2 } from "lucide-react"
+import { Building2, QrCode } from "lucide-react";
+import type { ChangeEvent } from "react";
+import Field from "@/components/Field";
+import type { BankAccountDetails } from "@/types/invoice";
 
-export default function BankDetails() {
+type BankDetailsProps = {
+    value?: BankAccountDetails;
+    onChange?: (patch: Partial<BankAccountDetails>) => void;
+};
+
+const defaultValue: BankAccountDetails = {
+    accountHolder: "",
+    bankAndBranch: "",
+    accountNumber: "",
+    swiftCode: "",
+    paymentReference: "",
+};
+
+export default function BankDetails({ value, onChange }: BankDetailsProps) {
+    const details = value ?? defaultValue;
+
+    const handleChange =
+        (key: keyof BankAccountDetails) => (e: ChangeEvent<HTMLInputElement>) => {
+            onChange?.({ [key]: e.target.value });
+        };
+
     return (
         <section className="flex flex-col gap-4 rounded-lg bg-white p-6 shadow-[0_1px_2px_0_rgba(0, 0, 0, 0.05)]">
-            <div className="flex justify-between pb-2 border-b border-surface-container">
+            <div className="flex justify-between border-b border-surface-container pb-2">
                 <div className="flex items-center gap-2">
-                    <Building2 />
-                    <h2>Bank Details & Payout Routing</h2>
+                    <Building2 className="h-5 w-5" />
+                    <h2 className="text-headline-sm text-on-surface">
+                        Bank Details &amp; Payout Routing
+                    </h2>
                 </div>
-                <div className="rounded-xs py-0.5 px-2 bg-primary/10 text-[11px] font-serif tracking-wider font-medium letter-spacing-[0.22px]">
+                <div className="rounded-xs bg-primary/10 px-2 py-0.5 font-serif text-[11px] font-medium tracking-wider">
                     <p>Direct Wire</p>
                 </div>
             </div>
-            <div className="grid grid-cols-12 grid-rows-1 gap-6 w-[660.67px] h-68.5">
-                <div>
-                    <p>Account Details</p>
+            <div className="grid grid-cols-12 gap-6 max-lg:grid-cols-1">
+                <div className="col-span-7 grid grid-cols-2 content-start gap-4 max-md:grid-cols-1 max-lg:col-span-1">
+                    <div className="col-span-2 max-md:col-span-1">
+                        <Field
+                            label="Account Holder Name"
+                            placeholder="e.g. Julian Vance"
+                            value={details.accountHolder}
+                            onChange={handleChange("accountHolder")}
+                            autoComplete="off"
+                        />
+                    </div>
+                    <div className="col-span-2 max-md:col-span-1">
+                        <Field
+                            label="Bank and Branch"
+                            placeholder="e.g. Deutsche Bank, Berlin Hauptstrasse Branch"
+                            value={details.bankAndBranch}
+                            onChange={handleChange("bankAndBranch")}
+                            autoComplete="off"
+                        />
+                    </div>
+                    <Field
+                        label="Account Number"
+                        placeholder="e.g. 0532 0130 00"
+                        value={details.accountNumber}
+                        onChange={handleChange("accountNumber")}
+                        autoComplete="off"
+                        inputMode="numeric"
+                    />
+                    <Field
+                        label="SWIFT Code"
+                        placeholder="e.g. COBADEFFXXX"
+                        value={details.swiftCode}
+                        onChange={handleChange("swiftCode")}
+                        autoComplete="off"
+                        style={{ textTransform: "uppercase" }}
+                    />
+                    <div className="col-span-2 max-md:col-span-1">
+                        <Field
+                            label="Payment Reference"
+                            placeholder="e.g. INV-2025-084"
+                            value={details.paymentReference}
+                            onChange={handleChange("paymentReference")}
+                            autoComplete="off"
+                        />
+                    </div>
                 </div>
-
-                <div className="w-[261.28px] h-[146.5px] justify-between rounded-lg border p-4 left-[399.39px] row-start-1 col-start-8 col-span-5 row-span-1">
-                    <p>Upload QR</p>
+                <div className="col-span-5 flex flex-col justify-between rounded-lg border border-surface-container bg-surface-container-low p-4 max-lg:col-span-1">
+                    <div className="flex items-center gap-1.5 text-[12px] font-semibold">
+                        <QrCode size={14} stroke="var(--primary)" />
+                        <p>Payment QR Code</p>
+                    </div>
                 </div>
             </div>
+
         </section>
     );
 }

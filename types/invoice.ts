@@ -5,6 +5,13 @@ export interface InvoiceItem {
   quantity: number;
 }
 
+export interface InvoiceMeta {
+  invoiceNumber: string;
+  issueDate: string;
+  paymentTerms: string;
+  currency: string;
+}
+
 export interface InvoiceData {
   // Invoice Setup
   invoiceNumber: string;
@@ -40,8 +47,16 @@ export interface InvoiceData {
 
   // Bank Details
   accountHolder: string;
-  bankName: string;
-  iban: string;
-  bic: string;
+  bankAndBranch: string;
+  accountNumber: string;
+  swiftCode: string;
+  paymentReference: string;
+}
+
+export interface BankAccountDetails {
+  accountHolder: string;
+  bankAndBranch: string;
+  accountNumber: string;
+  swiftCode: string;
   paymentReference: string;
 }

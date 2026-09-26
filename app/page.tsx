@@ -6,13 +6,26 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import InvoicePreview from "@/components/InvoicePreview";
 import UtilityBar from "@/components/UtilityBar";
-import type { InvoiceItem } from "@/types/invoice";
+import type { BankAccountDetails, InvoiceItem, InvoiceMeta } from "@/types/invoice";
 
 export default function Home() {
     const [items, setItems] = useState<InvoiceItem[]>([
         { id: "1", description: "Identity & strategy workshop", quantity: 1, rate: 1800 },
         { id: "2", description: "Website interface design", quantity: 2, rate: 1250 },
     ]);
+    const [meta, setMeta] = useState<InvoiceMeta>({
+        invoiceNumber: "INV-2026-001",
+        issueDate: "2026-03-01",
+        paymentTerms: "Net 15 Days",
+        currency: "USD",
+    });
+    const [bankDetails, setBankDetails] = useState<BankAccountDetails>({
+        accountHolder: "",
+        bankAndBranch: "",
+        accountNumber: "",
+        swiftCode: "",
+        paymentReference: "",
+    });
 
     const addItem = () =>
         setItems([
@@ -33,13 +46,27 @@ export default function Home() {
             ),
         );
 
+    const updateBankDetails = (patch: Partial<BankAccountDetails>) =>
+        setBankDetails((prev) => ({ ...prev, ...patch }));
+
+    const updateMeta = (patch: Partial<InvoiceMeta>) =>
+        setMeta((prev) => ({ ...prev, ...patch }));
+
     return (
         <main className="min-w-250 max-lg:min-w-0">
             <Header />
             <UtilityBar />
             <div className="mx-auto mt-6 grid max-w-308 grid-cols-[708px_minmax(0,1fr)] gap-6 pb-32.5 max-lg:m-4 max-lg:grid-cols-1 max-lg:px-4 max-lg:pb-32.5">
-                <EditorPanel items={items} onAddItem={addItem} onUpdateItem={updateItem} />
-                <InvoicePreview items={items} />
+                <EditorPanel
+                    items={items}
+                    onAddItem={addItem}
+                    onUpdateItem={updateItem}
+                    meta={meta}
+                    onMetaChange={updateMeta}
+                    bankDetails={bankDetails}
+                    onBankDetailsChange={updateBankDetails}
+                />
+                <InvoicePreview items={items} meta={meta} bankDetails={bankDetails} />
             </div>
             <ExportDrawer />
             <Footer />
