@@ -13,7 +13,10 @@ type LineItemsCardProps = {
 const rowGrid =
     "grid grid-cols-[minmax(180px,1fr)_60px_98px_104px] gap-2 px-2.5 py-2 max-md:grid-cols-[minmax(120px,1fr)_45px_75px]";
 
+// Editable line items. Amounts format with the selected currency; numeric
+// inputs arrive as strings and are coerced by the parent updater.
 export default function LineItemsCard({ items, onAdd, onUpdate, currency = "USD" }: LineItemsCardProps) {
+    // Currency-aware formatter; unknown codes fall back to USD.
     const money = (amount: number) => {
         try {
             return formatCurrency(amount, currency || "USD");

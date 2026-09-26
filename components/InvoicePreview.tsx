@@ -28,6 +28,8 @@ const fallbackMeta: InvoiceMeta = {
     currency: "USD",
 };
 
+// Strict ISO parser (local time, avoiding the UTC shift of `new Date(str)`).
+// Returns null for blank/invalid input so callers can show a fallback.
 function parseIssueDate(raw: string): Date | null {
     const trimmed = raw.trim();
     if (!trimmed) return null;
@@ -48,6 +50,7 @@ function formatPaperDate(raw: string, fallback: string): string {
     }).format(parsed);
 }
 
+// Extracts the day count from free text like "Net 15 Days".
 function parseTermsDays(raw: string): number | null {
     const match = raw.match(/(\d+)/);
     if (!match) return null;
@@ -55,6 +58,7 @@ function parseTermsDays(raw: string): number | null {
     return Number.isNaN(days) ? null : days;
 }
 
+// Due date = issue date + terms days; falls back when either is unparseable.
 function formatDueDate(issueRaw: string, termsRaw: string, fallback: string): string {
     const issued = parseIssueDate(issueRaw);
     const days = parseTermsDays(termsRaw);
@@ -68,6 +72,8 @@ function formatDueDate(issueRaw: string, termsRaw: string, fallback: string): st
     }).format(due);
 }
 
+// Normalizes currency input to an Intl code: 3-letter codes pass through,
+// bare symbols (€/₹/£/$) map to their currency, otherwise USD.
 function parseCurrencyCode(raw: string): string {
     const codeMatch = raw.match(/\b([A-Za-z]{3})\b/);
     if (codeMatch) return codeMatch[1].toUpperCase();
@@ -86,6 +92,7 @@ export default function InvoicePreview({
     notes,
     bankDetails,
 }: InvoicePreviewProps) {
+    // Empty inputs resolve to presentable defaults so the sheet never blanks.
     const resolvedMeta = {
         invoiceNumber: meta?.invoiceNumber?.trim() || fallbackMeta.invoiceNumber,
         issueDate: meta?.issueDate?.trim() || fallbackMeta.issueDate,
@@ -105,7 +112,55 @@ export default function InvoicePreview({
         address: details?.clientAddress?.trim() || "California, USA",
     };
     const resolvedNotes = notes?.trim() || "Thank you for your business.";
+
+    // Shared payment-instructions block: only non-empty bank fields print
+    const paymentInstructions = (
+        <div>
+            <b className="text-[11px] text-on-surface">Payment Instructions</b>
+            <p className="text-[11px] leading-4.25 text-on-surface-variant">
+                {bankDetails?.accountHolder ? (
+                    <>
+                        Account Holder: {bankDetails.accountHolder}
+                        <br />
+                    </>
+                ) : null}
+                {bankDetails?.bankAndBranch ? (
+                    <>
+                        Bank Name &amp; Branch: {bankDetails.bankAndBranch}
+                        <br />
+                    </>
+                ) : null}
+                {bankDetails?.accountNumber ? (
+                    <>
+                        Account Number: {bankDetails.accountNumber}
+                        <br />
+                    </>
+                ) : null}
+                {bankDetails?.swiftCode ? (
+                    <>
+                        SWIFT: {bankDetails.swiftCode}
+                        <br />
+                    </>
+                ) : null}
+                {bankDetails?.paymentReference ? (
+                    <>Reference: {bankDetails.paymentReference}</>
+                ) : null}
+                {!bankDetails?.accountHolder &&
+                    !bankDetails?.bankAndBranch &&
+                    !bankDetails?.accountNumber &&
+                    !bankDetails?.swiftCode &&
+                    !bankDetails?.paymentReference ? (
+                    <>
+                        Account Number: 0037000012345678
+                        <br />
+                        SWIFT: COBADEFFXXX
+                    </>
+                ) : null}
+            </p>
+        </div>
+    );
     const currencyCode = parseCurrencyCode(resolvedMeta.currency);
+    // Currency-aware formatter with a USD fallback for unknown codes.
     const money = (amount: number) => {
         try {
             return formatCurrency(amount, currencyCode);
@@ -223,9 +278,9 @@ export default function InvoicePreview({
                     </strong>
                 </div>
                 <div className="p-4 rounded-sm bg-surface-container-low">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            {bankDetails?.qrImage ? (
+                    {bankDetails?.qrImage ? (
+                        <div className="flex items-center justify-between">
+                            <div>
                                 <Image
                                     width={50}
                                     height={50}
@@ -233,54 +288,12 @@ export default function InvoicePreview({
                                     alt="Payment QR code"
                                     className="size-20 rounded-sm border border-line bg-white object-contain p-1"
                                 />
-                            ) : (
-                                <p>Uploaded QR Image</p>
-                            )}
+                            </div>
+                            {paymentInstructions}
                         </div>
-                        <div>
-                            <b className="text-[11px] text-on-surface">Payment Instructions</b>
-                            <p className="text-[11px] leading-4.25 text-on-surface-variant">
-                                {bankDetails?.accountHolder ? (
-                                    <>
-                                        Account Holder: {bankDetails.accountHolder}
-                                        <br />
-                                    </>
-                                ) : null}
-                                {bankDetails?.bankAndBranch ? (
-                                    <>
-                                        Bank &amp; Branch: {bankDetails.bankAndBranch}
-                                        <br />
-                                    </>
-                                ) : null}
-                                {bankDetails?.accountNumber ? (
-                                    <>
-                                        Account Number: {bankDetails.accountNumber}
-                                        <br />
-                                    </>
-                                ) : null}
-                                {bankDetails?.swiftCode ? (
-                                    <>
-                                        SWIFT: {bankDetails.swiftCode}
-                                        <br />
-                                    </>
-                                ) : null}
-                                {bankDetails?.paymentReference ? (
-                                    <>Reference: {bankDetails.paymentReference}</>
-                                ) : null}
-                                {!bankDetails?.accountHolder &&
-                                    !bankDetails?.bankAndBranch &&
-                                    !bankDetails?.accountNumber &&
-                                    !bankDetails?.swiftCode &&
-                                    !bankDetails?.paymentReference ? (
-                                    <>
-                                        Account Number: 0037000012345678
-                                        <br />
-                                        SWIFT: COBADEFFXXX
-                                    </>
-                                ) : null}
-                            </p>
-                        </div>
-                    </div>
+                    ) : (
+                        paymentInstructions
+                    )}
                     <div>
                         <small className="mt-7 block text-[10px] text-muted">
                             {resolvedNotes}

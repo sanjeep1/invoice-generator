@@ -51,6 +51,7 @@ export default function Home() {
             { id: String(Date.now()), description: "New line item", quantity: 1, rate: 0 },
         ]);
 
+    // String inputs for qty/rate coerce to numbers; description passes through.
     const updateItem = (
         id: string,
         key: "description" | "quantity" | "rate",
@@ -64,6 +65,7 @@ export default function Home() {
             ),
         );
 
+    // Patch-style updaters merge partial edits into each state slice.
     const updateBankDetails = (patch: Partial<BankAccountDetails>) =>
         setBankDetails((prev) => ({ ...prev, ...patch }));
 

@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Format number as currency
+// Formats via Intl; throws for unknown codes, so callers fall back to USD.
 export function formatCurrency(amount: number, currency = "USD") {
   return new Intl.NumberFormat("en-US", {
     style: "currency",

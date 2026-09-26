@@ -5,6 +5,8 @@ type FieldProps = {
     defaultValue?: string;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "defaultValue">;
 
+// Reusable labeled text input. Spreads extra props onto the <input> so
+// callers can make it controlled (value/onChange) or specialized (type/date).
 export default function Field({ label, defaultValue, ...inputProps }: FieldProps) {
     return (
         <label className="flex flex-col gap-1 text-xs text-on-surface-variant">

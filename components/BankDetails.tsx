@@ -20,9 +20,10 @@ const defaultValue: BankAccountDetails = {
 };
 
 const ALLOWED_QR_TYPES = ["image/png", "image/jpeg"];
-const MAX_QR_SIZE = 2 * 1024 * 1024; // 2 MB
-const QR_SCAN_MAX_DIM = 800;
+const MAX_QR_SIZE = 2 * 1024 * 1024; // 2 MB upload cap
+const QR_SCAN_MAX_DIM = 800; // downscale target for fast QR decoding
 
+// Returns true when the image contains a decodable QR code.
 function decodeQrFromDataUrl(dataUrl: string): Promise<boolean> {
     return new Promise((resolve) => {
         const img = new window.Image();
@@ -57,11 +58,13 @@ export default function BankDetails({ value, onChange }: BankDetailsProps) {
     const [qrError, setQrError] = useState("");
     const [qrChecking, setQrChecking] = useState(false);
 
+    // Text fields merge straight into state; qrImage is set by handleFile.
     const handleChange =
         (key: keyof BankAccountDetails) => (e: ChangeEvent<HTMLInputElement>) => {
             onChange?.({ [key]: e.target.value } as Partial<BankAccountDetails>);
         };
 
+    // Upload pipeline: MIME/extension check → size check → QR-content check.
     const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || qrChecking) return;

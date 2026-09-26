@@ -1,5 +1,5 @@
-// Static for now: choosing a client only changes the dropdown itself.
-// Pass `clients`, `value` and `onChange` later to drive the card fields.
+// Picks a saved client; the parent maps the choice onto the client fields
+// (currently `clientCompany`) via `onChange`.
 const SAVED_CLIENTS = ["Aster & Co.", "Globex Corporation", "Initech LLC", "Umbrella Co."];
 
 type ClientSelectProps = {

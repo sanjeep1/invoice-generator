@@ -1,6 +1,6 @@
 export default function UtilityBar() {
-    const actionButton =
-        "rounded-sm bg-transparent p-2 text-xs text-on-surface-variant transition-colors hover:bg-surface-container-low";
+    // const actionButton =
+    //     "rounded-sm bg-transparent p-2 text-xs text-on-surface-variant transition-colors hover:bg-surface-container-low";
 
     return (
         <section className="flex h-12.5 items-center justify-between border-b border-line bg-white px-6 text-xs text-on-surface-variant max-lg:px-4">

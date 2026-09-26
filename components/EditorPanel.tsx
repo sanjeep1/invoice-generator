@@ -64,6 +64,7 @@ export default function EditorPanel({
                     title="♙ Client Details"
                     side="Recipient"
                     media={
+                        // Saved-client choice fills the company-name field.
                         <ClientSelect
                             value={details.clientCompany || undefined}
                             onChange={(client) => onDetailsChange({ clientCompany: client })}
