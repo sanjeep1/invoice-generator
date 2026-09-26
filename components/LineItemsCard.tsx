@@ -7,12 +7,20 @@ type LineItemsCardProps = {
     items: InvoiceItem[];
     onAdd: () => void;
     onUpdate: (id: string, key: ItemField, value: string) => void;
+    currency?: string;
 };
 
 const rowGrid =
     "grid grid-cols-[minmax(180px,1fr)_60px_98px_104px] gap-2 px-2.5 py-2 max-md:grid-cols-[minmax(120px,1fr)_45px_75px]";
 
-export default function LineItemsCard({ items, onAdd, onUpdate }: LineItemsCardProps) {
+export default function LineItemsCard({ items, onAdd, onUpdate, currency = "USD" }: LineItemsCardProps) {
+    const money = (amount: number) => {
+        try {
+            return formatCurrency(amount, currency || "USD");
+        } catch {
+            return formatCurrency(amount);
+        }
+    };
     return (
         <section className="rounded-lg bg-white p-6 shadow-[0_1px_1px_rgb(0_0_0/0.05)]">
             <div className="mb-4 flex items-center justify-between">
@@ -50,7 +58,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate }: LineItemsCardP
                         onChange={(e) => onUpdate(item.id, "rate", e.target.value)}
                     />
                     <output className="text-right text-xs font-semibold text-on-surface max-md:hidden">
-                        {formatCurrency(item.quantity * item.rate)}
+                        {money(item.quantity * item.rate)}
                     </output>
                 </div>
             ))}

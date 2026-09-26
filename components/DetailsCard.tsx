@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
+import type { ChangeEvent } from "react";
 import Field from "@/components/Field";
+import type { InvoiceDetails } from "@/types/invoice";
 
 export type DetailField = {
     label: string;
-    defaultValue?: string;
+    fieldKey: keyof InvoiceDetails;
     type?: string;
     placeholder?: string;
 };
@@ -13,9 +15,16 @@ type DetailsCardProps = {
     side: string;
     fields: DetailField[];
     media?: ReactNode;
+    value?: InvoiceDetails;
+    onChange?: (patch: Partial<InvoiceDetails>) => void;
 };
 
-export default function DetailsCard({ title, side, fields, media }: DetailsCardProps) {
+export default function DetailsCard({ title, side, fields, media, value, onChange }: DetailsCardProps) {
+    const handleChange =
+        (key: keyof InvoiceDetails) => (e: ChangeEvent<HTMLInputElement>) => {
+            onChange?.({ [key]: e.target.value });
+        };
+
     return (
         <section className="rounded-lg bg-white p-6 pb-7.25 shadow-[0_1px_1px_rgb(0_0_0/0.05)]">
             <div className="mb-4 flex items-center justify-between">
@@ -25,9 +34,10 @@ export default function DetailsCard({ title, side, fields, media }: DetailsCardP
             {media}
             {fields.map((field) => (
                 <Field
-                    key={field.label}
+                    key={field.fieldKey}
                     label={field.label}
-                    defaultValue={field.defaultValue}
+                    value={value?.[field.fieldKey] ?? ""}
+                    onChange={handleChange(field.fieldKey)}
                     type={field.type}
                     placeholder={field.placeholder}
                 />

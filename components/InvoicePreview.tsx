@@ -1,12 +1,19 @@
 import { useMemo } from "react";
 import { formatCurrency } from "@/lib/utils";
-import type { BankAccountDetails, InvoiceItem, InvoiceMeta } from "@/types/invoice";
+import type {
+    BankAccountDetails,
+    InvoiceDetails,
+    InvoiceItem,
+    InvoiceMeta,
+} from "@/types/invoice";
 import { SquareDimensions } from "lucide-react";
 
 type InvoicePreviewProps = {
     items: InvoiceItem[];
     taxRate?: number;
     meta?: InvoiceMeta;
+    details?: InvoiceDetails;
+    notes?: string;
     bankDetails?: BankAccountDetails;
 };
 
@@ -74,6 +81,8 @@ export default function InvoicePreview({
     items,
     taxRate = 0.19,
     meta,
+    details,
+    notes,
     bankDetails,
 }: InvoicePreviewProps) {
     const resolvedMeta = {
@@ -82,6 +91,19 @@ export default function InvoicePreview({
         paymentTerms: meta?.paymentTerms?.trim() || fallbackMeta.paymentTerms,
         currency: meta?.currency?.trim() || fallbackMeta.currency,
     };
+    const sender = {
+        name: details?.senderName?.trim() || "Sanjeep Banjara",
+        business: details?.senderBusiness?.trim() || "Sanjeep Ltd.",
+        email: details?.senderEmail?.trim() || "billing@sanjeepbanjara.com.np",
+        country: details?.senderCountry?.trim() || "Kathmandu, Nepal",
+    };
+    const client = {
+        company: details?.clientCompany?.trim() || "Apple Inc.",
+        name: details?.clientName?.trim() || "Steve Jobs",
+        email: details?.clientEmail?.trim() || "hello@apple.com",
+        address: details?.clientAddress?.trim() || "California, USA",
+    };
+    const resolvedNotes = notes?.trim() || "Thank you for your business.";
     const currencyCode = parseCurrencyCode(resolvedMeta.currency);
     const money = (amount: number) => {
         try {
@@ -147,24 +169,24 @@ export default function InvoicePreview({
                 <div className="mt-8.75 grid grid-cols-2 border-t border-line py-6.25">
                     <div className="flex flex-col gap-1">
                         <span className={paperLabel}>FROM</span>
-                        <b className="mt-0.75 text-xs text-on-surface">Julian Vance</b>
+                        <b className="mt-0.75 text-xs text-on-surface">{sender.name}</b>
                         <p className="text-[11px] leading-4.25 text-on-surface-variant">
-                            Vance Interactive Studio Ltd.
+                            {sender.business}
                             <br />
-                            Berlin, Germany
+                            {sender.country}
                             <br />
-                            billing@vancestudio.design
+                            {sender.email}
                         </p>
                     </div>
                     <div className="flex flex-col gap-1">
                         <span className={paperLabel}>BILL TO</span>
-                        <b className="mt-0.75 text-xs text-on-surface">Aster &amp; Co.</b>
+                        <b className="mt-0.75 text-xs text-on-surface">{client.company}</b>
                         <p className="text-[11px] leading-4.25 text-on-surface-variant">
-                            Attn. Marina Ellis
+                            Attn. {client.name}
                             <br />
-                            New York, USA
+                            {client.address}
                             <br />
-                            hello@asterandco.com
+                            {client.email}
                         </p>
                     </div>
                 </div>
@@ -240,7 +262,7 @@ export default function InvoicePreview({
                                     !bankDetails?.swiftCode &&
                                     !bankDetails?.paymentReference ? (
                                     <>
-                                        Account Number: DE89 3704 0044 0532 0130 00
+                                        Account Number: 0037000012345678
                                         <br />
                                         SWIFT: COBADEFFXXX
                                     </>
@@ -250,7 +272,7 @@ export default function InvoicePreview({
                     </div>
                     <div>
                         <small className="mt-7 block text-[10px] text-muted">
-                            Thank you for your business.
+                            {resolvedNotes}
                         </small>
                     </div>
                 </div>

@@ -4,7 +4,7 @@ import LineItemsCard from "@/components/LineItemsCard";
 import LogoUpload from "@/components/LogoUpload";
 import MetadataCard from "@/components/MetadataCard";
 import NotesCard from "@/components/NotesCard";
-import type { BankAccountDetails, InvoiceItem, InvoiceMeta } from "@/types/invoice";
+import type { BankAccountDetails, InvoiceDetails, InvoiceItem, InvoiceMeta } from "@/types/invoice";
 import BankDetails from "./BankDetails";
 
 type EditorPanelProps = {
@@ -17,6 +17,10 @@ type EditorPanelProps = {
     ) => void;
     meta: InvoiceMeta;
     onMetaChange: (patch: Partial<InvoiceMeta>) => void;
+    details: InvoiceDetails;
+    onDetailsChange: (patch: Partial<InvoiceDetails>) => void;
+    notes: string;
+    onNotesChange: (value: string) => void;
     bankDetails: BankAccountDetails;
     onBankDetailsChange: (patch: Partial<BankAccountDetails>) => void;
 };
@@ -27,6 +31,10 @@ export default function EditorPanel({
     onUpdateItem,
     meta,
     onMetaChange,
+    details,
+    onDetailsChange,
+    notes,
+    onNotesChange,
     bankDetails,
     onBankDetailsChange,
 }: EditorPanelProps) {
@@ -38,34 +46,48 @@ export default function EditorPanel({
                     title="Your Details (Issuer)"
                     side="Sender"
                     media={<LogoUpload />}
+                    value={details}
+                    onChange={onDetailsChange}
                     fields={[
-                        { label: "Freelancer or Studio Name", defaultValue: "Julian Vance" },
+                        { label: "Freelancer or Studio Name", fieldKey: "senderName" },
                         {
                             label: "Business Entity / Trading Title",
-                            defaultValue: "Vance Interactive Studio Ltd.",
+                            fieldKey: "senderBusiness",
                         },
-                        { label: "Business Email", defaultValue: "billing@vancestudio.design" },
-                        { label: "Phone", defaultValue: "9876543210", type: "tel" },
-                        { label: "Tax / PAN / VAT ID", defaultValue: "849204910" },
-                        { label: "Country / City", defaultValue: "Berlin, Germany" },
+                        { label: "Business Email", fieldKey: "senderEmail" },
+                        { label: "Phone", fieldKey: "senderPhone", type: "tel" },
+                        { label: "Tax / PAN / VAT ID", fieldKey: "senderTaxId" },
+                        { label: "Country / City", fieldKey: "senderCountry" },
                     ]}
                 />
                 <DetailsCard
                     title="♙ Client Details"
                     side="Recipient"
-                    media={<ClientSelect />}
+                    media={
+                        <ClientSelect
+                            value={details.clientCompany || undefined}
+                            onChange={(client) => onDetailsChange({ clientCompany: client })}
+                        />
+                    }
+                    value={details}
+                    onChange={onDetailsChange}
                     fields={[
-                        { label: "Client or Company Name", defaultValue: "Aster & Co." },
-                        { label: "Contact Person", defaultValue: "Marina Ellis" },
-                        { label: "Client Email", defaultValue: "hello@asterandco.com" },
-                        { label: "Phone", defaultValue: "9876543210", type: "tel" },
-                        { label: "Tax / PAN / VAT ID", defaultValue: "942298120" },
-                        { label: "Country / City", defaultValue: "New York, USA" },
+                        { label: "Client or Company Name", fieldKey: "clientCompany" },
+                        { label: "Contact Person", fieldKey: "clientName" },
+                        { label: "Client Email", fieldKey: "clientEmail" },
+                        { label: "Phone", fieldKey: "clientPhone", type: "tel" },
+                        { label: "Tax / PAN / VAT ID", fieldKey: "clientTaxId" },
+                        { label: "Country / City", fieldKey: "clientAddress" },
                     ]}
                 />
             </div>
-            <LineItemsCard items={items} onAdd={onAddItem} onUpdate={onUpdateItem} />
-            <NotesCard />
+            <LineItemsCard
+                items={items}
+                onAdd={onAddItem}
+                onUpdate={onUpdateItem}
+                currency={meta.currency}
+            />
+            <NotesCard value={notes} onChange={onNotesChange} />
             <BankDetails value={bankDetails} onChange={onBankDetailsChange} />
         </section>
     );

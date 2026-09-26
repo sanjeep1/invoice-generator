@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import InvoicePreview from "@/components/InvoicePreview";
 import UtilityBar from "@/components/UtilityBar";
-import type { BankAccountDetails, InvoiceItem, InvoiceMeta } from "@/types/invoice";
+import type { BankAccountDetails, InvoiceDetails, InvoiceItem, InvoiceMeta } from "@/types/invoice";
 
 export default function Home() {
     const [items, setItems] = useState<InvoiceItem[]>([
@@ -19,6 +19,23 @@ export default function Home() {
         paymentTerms: "Net 15 Days",
         currency: "USD",
     });
+    const [details, setDetails] = useState<InvoiceDetails>({
+        senderName: "Sanjeep Banjara",
+        senderBusiness: "Sanjeep Ltd.",
+        senderEmail: "billing@sanjeep.com",
+        senderPhone: "9876543210",
+        senderTaxId: "849204910",
+        senderCountry: "Kathmandu, Nepal",
+        clientCompany: "Apple",
+        clientName: "Steve Jobs",
+        clientEmail: "hello@apple.com",
+        clientPhone: "9876543210",
+        clientTaxId: "942298120",
+        clientAddress: "California, USA",
+    });
+    const [notes, setNotes] = useState(
+        "Thank you for the opportunity to collaborate. Payment is due within 15 days of the invoice date.",
+    );
     const [bankDetails, setBankDetails] = useState<BankAccountDetails>({
         accountHolder: "",
         bankAndBranch: "",
@@ -52,6 +69,9 @@ export default function Home() {
     const updateMeta = (patch: Partial<InvoiceMeta>) =>
         setMeta((prev) => ({ ...prev, ...patch }));
 
+    const updateDetails = (patch: Partial<InvoiceDetails>) =>
+        setDetails((prev) => ({ ...prev, ...patch }));
+
     return (
         <main className="min-w-250 max-lg:min-w-0">
             <Header />
@@ -63,10 +83,20 @@ export default function Home() {
                     onUpdateItem={updateItem}
                     meta={meta}
                     onMetaChange={updateMeta}
+                    details={details}
+                    onDetailsChange={updateDetails}
+                    notes={notes}
+                    onNotesChange={setNotes}
                     bankDetails={bankDetails}
                     onBankDetailsChange={updateBankDetails}
                 />
-                <InvoicePreview items={items} meta={meta} bankDetails={bankDetails} />
+                <InvoicePreview
+                    items={items}
+                    meta={meta}
+                    details={details}
+                    notes={notes}
+                    bankDetails={bankDetails}
+                />
             </div>
             <ExportDrawer />
             <Footer />
