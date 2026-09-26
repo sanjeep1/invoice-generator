@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import Image from "next/image";
 import { formatCurrency } from "@/lib/utils";
 import type {
     BankAccountDetails,
@@ -224,7 +225,17 @@ export default function InvoicePreview({
                 <div className="p-4 rounded-sm bg-surface-container-low">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p>Uploaded QR Image</p>
+                            {bankDetails?.qrImage ? (
+                                <Image
+                                    width={50}
+                                    height={50}
+                                    src={bankDetails.qrImage}
+                                    alt="Payment QR code"
+                                    className="size-20 rounded-sm border border-line bg-white object-contain p-1"
+                                />
+                            ) : (
+                                <p>Uploaded QR Image</p>
+                            )}
                         </div>
                         <div>
                             <b className="text-[11px] text-on-surface">Payment Instructions</b>

@@ -71,6 +71,7 @@ export interface InvoiceData {
     accountNumber: string;
     swiftCode: string;
     paymentReference: string;
+    qrImage: string;
 }
 
 export interface BankAccountDetails {
@@ -79,4 +80,5 @@ export interface BankAccountDetails {
     accountNumber: string;
     swiftCode: string;
     paymentReference: string;
+    qrImage: string;
 }

@@ -42,6 +42,7 @@ export default function Home() {
         accountNumber: "",
         swiftCode: "",
         paymentReference: "",
+        qrImage: "",
     });
 
     const addItem = () =>
