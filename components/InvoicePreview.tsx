@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import Image from "next/image";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, numberToWords } from "@/lib/utils";
 import type {
     BankAccountDetails,
     InvoiceDetails,
@@ -18,7 +18,7 @@ type InvoicePreviewProps = {
     bankDetails?: BankAccountDetails;
 };
 
-const paperLabel = "font-mono text-[9px] tracking-wider text-muted";
+const paperLabel = "font-inter text-[12px] tracking-wider text-muted";
 const paperValue = "text-[11px] text-on-surface";
 
 const fallbackMeta: InvoiceMeta = {
@@ -110,6 +110,8 @@ export default function InvoicePreview({
         name: details?.clientName?.trim() || "Steve Jobs",
         email: details?.clientEmail?.trim() || "hello@apple.com",
         address: details?.clientAddress?.trim() || "California, USA",
+        taxId: details?.clientTaxId?.trim() || 999999999,
+
     };
     const resolvedNotes = notes?.trim() || "Thank you for your business.";
 
@@ -173,6 +175,8 @@ export default function InvoicePreview({
         [items],
     );
     const tax = subtotal * taxRate;
+    const total = subtotal + tax;
+    const amountInWords = numberToWords(total, currencyCode);
 
     return (
         <aside className="min-h-337.5 rounded-lg p-4 max-lg:min-h-0 max-md:p-2 gap-4">
@@ -189,61 +193,52 @@ export default function InvoicePreview({
                 </div>
             </div>
             <div className="flex flex-col mx-auto min-h-262.5 bg-white px-9.5 py-10.5 gap-6 shadow-sheet max-lg:max-w-150 max-md:px-5 max-md:py-7">
-                <div className="flex items-center gap-1.5 text-primary">
-                    <span className="text-[23px] leading-none">▰</span>
-                    <b className="text-lg tracking-[2px]">VANCE</b>
-                    <small className="ml-1 border-l border-divider pl-2 text-[8px] tracking-[1px] text-on-surface-variant">
-                        INTERACTIVE STUDIO
-                    </small>
-                </div>
-                <div className="mt-14.5 flex justify-between">
-                    <div>
-                        <h1 className="text-[34px] leading-none font-semibold tracking-[-1.5px] text-on-surface">
-                            INVOICE
-                        </h1>
-                        <p className="mt-1.75 font-mono text-xs text-primary">
-                            {resolvedMeta.invoiceNumber}
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-[42px_90px] gap-0.75">
-                        <span className={paperLabel}>ISSUED</span>
-                        <b className={paperValue}>
-                            {formatPaperDate(resolvedMeta.issueDate, "March 01, 2025")}
-                        </b>
-                        <span className={paperLabel}>DUE</span>
-                        <b className={paperValue}>
-                            {formatDueDate(
-                                resolvedMeta.issueDate,
-                                resolvedMeta.paymentTerms,
-                                "March 16, 2025",
-                            )}
-                        </b>
-                        <span className={paperLabel}>Currency</span>
-                        <b className={paperValue}>{resolvedMeta.currency}</b>
-                    </div>
-                </div>
-                <div className="mt-8.75 grid grid-cols-2 border-t border-line py-6.25">
-                    <div className="flex flex-col gap-1">
-                        <span className={paperLabel}>FROM</span>
-                        <b className="mt-0.75 text-xs text-on-surface">{sender.name}</b>
-                        <p className="text-[11px] leading-4.25 text-on-surface-variant">
-                            {sender.business}
-                            <br />
-                            {sender.country}
-                            <br />
-                            {sender.email}
-                        </p>
+                <div className="flex items-center justify-between pb-6 gap-1.5 text-primary">
+                    <div className="flex flex-row gap-1 ">
+                        {/* <Image src={} /> */}
+                        <div className="flex flex-col items-start">
+                            <p className="text-headline-sm text-on-surface">{sender.name}</p>
+                            <p className="text-headline-sm text-on-surface">{sender.business}</p>
+                            <p className="text-sm text-on-surface-variant">{sender.email}</p>
+                            <p className="text-sm text-on-surface-variant">{sender.country}</p>
+                        </div>
                     </div>
                     <div className="flex flex-col gap-1">
-                        <span className={paperLabel}>BILL TO</span>
-                        <b className="mt-0.75 text-xs text-on-surface">{client.company}</b>
-                        <p className="text-[11px] leading-4.25 text-on-surface-variant">
-                            Attn. {client.name}
-                            <br />
-                            {client.address}
-                            <br />
-                            {client.email}
-                        </p>
+                        <p className="py-1 px-3 rounded-sm bg-surface-container-high text-label-num-sm uppercase">INVOICE</p>
+                        <p className="text-headline-sm text-on-surface">{resolvedMeta.invoiceNumber}</p>
+                    </div>
+                </div>
+                <div className="pb-6 border-b border-line flex justify-between gap-6">
+                    <div className="flex flex-col gap-1">
+                        <p className="uppercase text-label-num-sm text-muted">Billed To</p>
+                        <p className="text-body-md font-semibold text-on-surface">{client.company}</p>
+                        <p className="text-label-num-sm text-on-surface-variant">{client.name}</p>
+                        <p className="text-label-num-sm text-primary">{client.email}</p>
+                        <p className="text-[11px] font-medium text-muted">{client.address}</p>
+                        <p className="text-[11px] font-medium text-muted">TaxID: {client.taxId}</p>
+                    </div>
+                    <div className="flex flex-col gap-1 items-end">
+                        <p className="uppercase text-label-num-sm text-muted">Invoice Details</p>
+                        <div className="flex gap-2 items-center justify-center">
+                            <span className={paperLabel}>Issued:</span>
+                            <b className={paperValue}>
+                                {formatPaperDate(resolvedMeta.issueDate, "March 01, 2025")}
+                            </b>
+                        </div>
+                        <div className="flex gap-2 items-center justify-center">
+                            <span className={paperLabel}>Due:</span>
+                            <b className={paperValue}>
+                                {formatDueDate(
+                                    resolvedMeta.issueDate,
+                                    resolvedMeta.paymentTerms,
+                                    "March 16, 2025",
+                                )}
+                            </b>
+                        </div>
+                        <div className="flex gap-2 items-center justify-center">
+                            <span className={paperLabel}>Currency:</span>
+                            <b className={paperValue}>{resolvedMeta.currency}</b>
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -265,7 +260,7 @@ export default function InvoicePreview({
                         </div>
                     ))}
                 </div>
-                <div className="mt-6.25 ml-auto grid w-50 gap-2.5">
+                <div className="mt-6.25 ml-auto grid w-60 gap-2.5">
                     <span className="flex justify-between text-[11px] text-on-surface-variant">
                         Subtotal <b className="text-on-surface">{money(subtotal)}</b>
                     </span>
@@ -274,8 +269,12 @@ export default function InvoicePreview({
                         <b className="text-on-surface">{money(tax)}</b>
                     </span>
                     <strong className="flex justify-between border-t border-ink pt-3 text-sm text-on-surface">
-                        Total due <b>{money(subtotal + tax)}</b>
+                        Total due <b>{money(total)}</b>
                     </strong>
+                    <div className="flex flex-col items-end py-1.5 px-3 bg-surface-container-low/70 rounded-sm">
+                        <p className="uppercase text-[10px] text-muted tracking-wider">Amount in words:</p>
+                        <p className="text-right text-[11px] font-medium text-on-surface-variant leading-4.25">{amountInWords}</p>
+                    </div>
                 </div>
                 <div className="p-4 rounded-sm bg-surface-container-low">
                     {bankDetails?.qrImage ? (
