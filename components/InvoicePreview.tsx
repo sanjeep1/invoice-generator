@@ -194,8 +194,16 @@ export default function InvoicePreview({
             </div>
             <div className="flex flex-col mx-auto min-h-262.5 bg-white px-9.5 py-10.5 gap-6 shadow-sheet max-lg:max-w-150 max-md:px-5 max-md:py-7">
                 <div className="flex items-center justify-between pb-6 gap-1.5 text-primary">
-                    <div className="flex flex-row gap-1 ">
-                        {/* <Image src={} /> */}
+                    <div className="flex flex-row items-center gap-2">
+                        {details?.senderLogo ? (
+                            <Image
+                                src={details.senderLogo}
+                                alt={`${sender.business} logo`}
+                                width={64}
+                                height={64}
+                                className="size-16 shrink-0 object-contain"
+                            />
+                        ) : null}
                         <div className="flex flex-col items-start">
                             <p className="text-headline-sm text-on-surface">{sender.name}</p>
                             <p className="text-headline-sm text-on-surface">{sender.business}</p>

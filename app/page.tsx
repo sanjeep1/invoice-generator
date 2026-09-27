@@ -26,6 +26,7 @@ export default function Home() {
         senderPhone: "9876543210",
         senderTaxId: "849204910",
         senderCountry: "Kathmandu, Nepal",
+        senderLogo: "",
         clientCompany: "Apple",
         clientName: "Steve Jobs",
         clientEmail: "hello@apple.com",

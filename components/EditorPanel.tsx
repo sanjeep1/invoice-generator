@@ -45,7 +45,12 @@ export default function EditorPanel({
                 <DetailsCard
                     title="Your Details (Issuer)"
                     side="Sender"
-                    media={<LogoUpload />}
+                    media={
+                        <LogoUpload
+                            value={details.senderLogo}
+                            onChange={(logo) => onDetailsChange({ senderLogo: logo })}
+                        />
+                    }
                     value={details}
                     onChange={onDetailsChange}
                     fields={[

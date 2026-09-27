@@ -20,6 +20,7 @@ export interface InvoiceDetails {
     senderPhone: string;
     senderTaxId: string;
     senderCountry: string;
+    senderLogo: string;
 
     // Client (Billed To)
     clientName: string;
