@@ -21,13 +21,6 @@ type InvoicePreviewProps = {
 const paperLabel = "font-inter text-[12px] tracking-wider text-muted";
 const paperValue = "text-[11px] text-on-surface";
 
-const fallbackMeta: InvoiceMeta = {
-    invoiceNumber: "INV-2026-001",
-    issueDate: "2025-03-01",
-    paymentTerms: "Net 15 Days",
-    currency: "USD",
-};
-
 // Strict ISO parser (local time, avoiding the UTC shift of `new Date(str)`).
 // Returns null for blank/invalid input so callers can show a fallback.
 function parseIssueDate(raw: string): Date | null {
@@ -40,9 +33,9 @@ function parseIssueDate(raw: string): Date | null {
     return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function formatPaperDate(raw: string, fallback: string): string {
+function formatPaperDate(raw: string): string | null {
     const parsed = parseIssueDate(raw);
-    if (!parsed) return fallback;
+    if (!parsed) return null;
     return new Intl.DateTimeFormat("en-US", {
         month: "long",
         day: "2-digit",
@@ -58,11 +51,11 @@ function parseTermsDays(raw: string): number | null {
     return Number.isNaN(days) ? null : days;
 }
 
-// Due date = issue date + terms days; falls back when either is unparseable.
-function formatDueDate(issueRaw: string, termsRaw: string, fallback: string): string {
+// Due date = issue date + terms days; null when either is unparseable.
+function formatDueDate(issueRaw: string, termsRaw: string): string | null {
     const issued = parseIssueDate(issueRaw);
     const days = parseTermsDays(termsRaw);
-    if (!issued || days === null) return fallback;
+    if (!issued || days === null) return null;
     const due = new Date(issued);
     due.setDate(due.getDate() + days);
     return new Intl.DateTimeFormat("en-US", {
@@ -92,28 +85,31 @@ export default function InvoicePreview({
     notes,
     bankDetails,
 }: InvoicePreviewProps) {
-    // Empty inputs resolve to presentable defaults so the sheet never blanks.
+    // Raw trimmed values with no dummy fallbacks: the initial state in
+    // `app/page.tsx` carries the presentable defaults, so the sheet is full
+    // on first paint — but once the user clears a field, its line hides
+    // instead of resurrecting placeholder data.
     const resolvedMeta = {
-        invoiceNumber: meta?.invoiceNumber?.trim() || fallbackMeta.invoiceNumber,
-        issueDate: meta?.issueDate?.trim() || fallbackMeta.issueDate,
-        paymentTerms: meta?.paymentTerms?.trim() || fallbackMeta.paymentTerms,
-        currency: meta?.currency?.trim() || fallbackMeta.currency,
+        invoiceNumber: meta?.invoiceNumber?.trim() ?? "",
+        issueDate: meta?.issueDate?.trim() ?? "",
+        paymentTerms: meta?.paymentTerms?.trim() ?? "",
+        currency: meta?.currency?.trim() ?? "",
     };
     const sender = {
-        name: details?.senderName?.trim() || "Sanjeep Banjara",
-        business: details?.senderBusiness?.trim() || "Sanjeep Ltd.",
-        email: details?.senderEmail?.trim() || "billing@sanjeepbanjara.com.np",
-        country: details?.senderCountry?.trim() || "Kathmandu, Nepal",
+        name: details?.senderName?.trim() ?? "",
+        business: details?.senderBusiness?.trim() ?? "",
+        email: details?.senderEmail?.trim() ?? "",
+        country: details?.senderCountry?.trim() ?? "",
+        taxID: details?.senderTaxId?.trim() ?? "",
     };
     const client = {
-        company: details?.clientCompany?.trim() || "Apple Inc.",
-        name: details?.clientName?.trim() || "Steve Jobs",
-        email: details?.clientEmail?.trim() || "hello@apple.com",
-        address: details?.clientAddress?.trim() || "California, USA",
-        taxId: details?.clientTaxId?.trim() || 999999999,
-
+        company: details?.clientCompany?.trim() ?? "",
+        name: details?.clientName?.trim() ?? "",
+        email: details?.clientEmail?.trim() ?? "",
+        address: details?.clientAddress?.trim() ?? "",
+        taxId: details?.clientTaxId?.trim() ?? "",
     };
-    const resolvedNotes = notes?.trim() || "Thank you for your business.";
+    const resolvedNotes = notes?.trim() ?? "";
 
     // Shared payment-instructions block: only non-empty bank fields print
     const paymentInstructions = (
@@ -177,6 +173,12 @@ export default function InvoicePreview({
     const tax = subtotal * taxRate;
     const total = subtotal + tax;
     const amountInWords = numberToWords(total, currencyCode);
+    const issuedLabel = formatPaperDate(resolvedMeta.issueDate);
+    const dueLabel = formatDueDate(resolvedMeta.issueDate, resolvedMeta.paymentTerms);
+    const hasMetaRows = Boolean(issuedLabel || dueLabel || resolvedMeta.currency);
+    const hasClient = Boolean(
+        client.company || client.name || client.email || client.address || client.taxId,
+    );
 
     return (
         <aside className="min-h-337.5 rounded-lg p-4 max-lg:min-h-0 max-md:p-2 gap-4">
@@ -205,49 +207,71 @@ export default function InvoicePreview({
                             />
                         ) : null}
                         <div className="flex flex-col items-start">
-                            <p className="text-headline-sm text-on-surface">{sender.name}</p>
-                            <p className="text-headline-sm text-on-surface">{sender.business}</p>
-                            <p className="text-sm text-on-surface-variant">{sender.email}</p>
-                            <p className="text-sm text-on-surface-variant">{sender.country}</p>
+                            {sender.name ? (
+                                <p className="text-headline-sm text-on-surface">{sender.name}</p>
+                            ) : null}
+                            {sender.business ? (
+                                <p className="text-headline-sm text-on-surface">{sender.business}</p>
+                            ) : null}
+                            {sender.email ? (
+                                <p className="text-sm text-on-surface-variant">{sender.email}</p>
+                            ) : null}
+                            {sender.country ? (
+                                <p className="text-sm text-on-surface-variant">{sender.country}</p>
+                            ) : null}
                         </div>
                     </div>
                     <div className="flex flex-col gap-1">
                         <p className="py-1 px-3 rounded-sm bg-surface-container-high text-label-num-sm uppercase">INVOICE</p>
-                        <p className="text-headline-sm text-on-surface">{resolvedMeta.invoiceNumber}</p>
+                        {resolvedMeta.invoiceNumber ? (
+                            <p className="text-headline-sm text-on-surface">{resolvedMeta.invoiceNumber}</p>
+                        ) : null}
                     </div>
                 </div>
                 <div className="pb-6 border-b border-line flex justify-between gap-6">
-                    <div className="flex flex-col gap-1">
-                        <p className="uppercase text-label-num-sm text-muted">Billed To</p>
-                        <p className="text-body-md font-semibold text-on-surface">{client.company}</p>
-                        <p className="text-label-num-sm text-on-surface-variant">{client.name}</p>
-                        <p className="text-label-num-sm text-primary">{client.email}</p>
-                        <p className="text-[11px] font-medium text-muted">{client.address}</p>
-                        <p className="text-[11px] font-medium text-muted">TaxID: {client.taxId}</p>
-                    </div>
-                    <div className="flex flex-col gap-1 items-end">
-                        <p className="uppercase text-label-num-sm text-muted">Invoice Details</p>
-                        <div className="flex gap-2 items-center justify-center">
-                            <span className={paperLabel}>Issued:</span>
-                            <b className={paperValue}>
-                                {formatPaperDate(resolvedMeta.issueDate, "March 01, 2025")}
-                            </b>
+                    {hasClient ? (
+                        <div className="flex flex-col gap-1">
+                            <p className="uppercase text-label-num-sm text-muted">Billed To</p>
+                            {client.company ? (
+                                <p className="text-body-md font-semibold text-on-surface">{client.company}</p>
+                            ) : null}
+                            {client.name ? (
+                                <p className="text-label-num-sm text-on-surface-variant">{client.name}</p>
+                            ) : null}
+                            {client.email ? (
+                                <p className="text-label-num-sm text-primary">{client.email}</p>
+                            ) : null}
+                            {client.address ? (
+                                <p className="text-[11px] font-medium text-muted">{client.address}</p>
+                            ) : null}
+                            {client.taxId ? (
+                                <p className="text-[11px] font-medium text-muted">TaxID: {client.taxId}</p>
+                            ) : null}
                         </div>
-                        <div className="flex gap-2 items-center justify-center">
-                            <span className={paperLabel}>Due:</span>
-                            <b className={paperValue}>
-                                {formatDueDate(
-                                    resolvedMeta.issueDate,
-                                    resolvedMeta.paymentTerms,
-                                    "March 16, 2025",
-                                )}
-                            </b>
+                    ) : null}
+                    {hasMetaRows ? (
+                        <div className="flex flex-col gap-1 items-end">
+                            <p className="uppercase text-label-num-sm text-muted">Invoice Details</p>
+                            {issuedLabel ? (
+                                <div className="flex gap-2 items-center justify-center">
+                                    <span className={paperLabel}>Issued:</span>
+                                    <b className={paperValue}>{issuedLabel}</b>
+                                </div>
+                            ) : null}
+                            {dueLabel ? (
+                                <div className="flex gap-2 items-center justify-center">
+                                    <span className={paperLabel}>Due:</span>
+                                    <b className={paperValue}>{dueLabel}</b>
+                                </div>
+                            ) : null}
+                            {resolvedMeta.currency ? (
+                                <div className="flex gap-2 items-center justify-center">
+                                    <span className={paperLabel}>Currency:</span>
+                                    <b className={paperValue}>{resolvedMeta.currency}</b>
+                                </div>
+                            ) : null}
                         </div>
-                        <div className="flex gap-2 items-center justify-center">
-                            <span className={paperLabel}>Currency:</span>
-                            <b className={paperValue}>{resolvedMeta.currency}</b>
-                        </div>
-                    </div>
+                    ) : null}
                 </div>
                 <div>
                     <div className="grid grid-cols-[minmax(80px,1fr)_34px_62px_73px] gap-1.25 bg-surface-container-low p-2 font-mono text-[9px] tracking-wider text-muted">
@@ -301,10 +325,13 @@ export default function InvoicePreview({
                     ) : (
                         paymentInstructions
                     )}
+                    <p className="mt-4 text-label-num-sm">Tax / PAN ID: {sender.taxID}</p>
                     <div>
-                        <small className="mt-7 block text-[10px] text-muted">
-                            {resolvedNotes}
-                        </small>
+                        {resolvedNotes ? (
+                            <small className="mt-2 block text-[11px] text-muted">
+                                {resolvedNotes}
+                            </small>
+                        ) : null}
                     </div>
                 </div>
             </div>

@@ -54,7 +54,7 @@ export default function EditorPanel({
                     value={details}
                     onChange={onDetailsChange}
                     fields={[
-                        { label: "Freelancer or Studio Name", fieldKey: "senderName" },
+                        { label: "Freelancer or Sender Name", fieldKey: "senderName" },
                         {
                             label: "Business Entity / Trading Title",
                             fieldKey: "senderBusiness",
