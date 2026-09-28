@@ -1,5 +1,8 @@
+import { useState } from "react";
+import { getCurrencySymbol } from "@/lib/currencies";
 import { formatCurrency } from "@/lib/utils";
 import type { InvoiceItem } from "@/types/invoice";
+import { ChevronDown, ChevronUp, GripVertical, PlusCircleIcon, ShoppingCart, SquareText, Tag, Trash } from "lucide-react";
 
 type ItemField = "description" | "quantity" | "rate";
 
@@ -11,11 +14,26 @@ type LineItemsCardProps = {
 };
 
 const rowGrid =
-    "grid grid-cols-[minmax(180px,1fr)_60px_98px_104px] gap-2 px-2.5 py-2 max-md:grid-cols-[minmax(120px,1fr)_45px_75px]";
+    "grid grid-cols-[minmax(0,1fr)_72px_110px_120px] max-md:grid-cols-[minmax(0,1fr)_56px_84px_32px] items-center gap-2 px-2.5 py-2";
+
+const cellInput =
+    "h-8 w-full min-w-0 rounded-sm border-0 bg-white px-2.5 py-1.5 text-[13px] text-on-surface outline-none focus:outline-2 focus:outline-primary-fixed-dim";
+
+const configLabel = "flex min-w-0 flex-1 flex-col gap-1 text-xs text-on-surface-variant";
+
+const configInput =
+    "h-8 w-full rounded-sm border-0 bg-white px-2.5 py-1.5 text-[13px] text-on-surface outline-none focus:outline-2 focus:outline-primary-fixed-dim disabled:cursor-not-allowed";
 
 // Editable line items. Amounts format with the selected currency; numeric
 // inputs arrive as strings and are coerced by the parent updater.
 export default function LineItemsCard({ items, onAdd, onUpdate, currency = "USD" }: LineItemsCardProps) {
+
+    const [applyTax, setApplyTax] = useState(false);
+    const [applyDiscount, setApplyDiscount] = useState(false);
+    const [discountType, setDiscountType] = useState<"percentage" | "fixed">("percentage");
+
+    const discountSuffix = discountType === "percentage" ? "%" : getCurrencySymbol(currency);
+
     // Currency-aware formatter; unknown codes fall back to USD.
     const money = (amount: number) => {
         try {
@@ -25,49 +43,182 @@ export default function LineItemsCard({ items, onAdd, onUpdate, currency = "USD"
         }
     };
     return (
-        <section className="rounded-lg bg-white p-6 shadow-[0_1px_1px_rgb(0_0_0/0.05)]">
-            <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-headline-sm text-on-surface">☷ Line Items</h2>
-                <button
-                    className="rounded-sm bg-white px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-surface-container-low"
-                    onClick={onAdd}
-                >
-                    + Add line item
-                </button>
+        <section className="flex flex-col rounded-lg bg-white gap-2 p-6 shadow-[0_1px_1px_rgb(0_0_0/0.05)]">
+            <div className="pb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <ShoppingCart stroke="var(--primary)" size={18} />
+                    <h2 className="text-headline-sm text-on-surface"> Line Items</h2>
+                </div>
+                <span className="py-0.5 px-2 rounded-sm bg-surface-container-low text-on-surface-variant text-[11px] font-medium">{items.length} {items.length === 1 ? "item" : "items"}</span>
             </div>
-            <div className={`${rowGrid} bg-surface-container-low font-mono text-[10px] tracking-[0.04em] text-muted`}>
-                <span>Description</span>
-                <span>Qty.</span>
-                <span>Rate</span>
-                <span className="max-md:hidden">Amount</span>
+            <div className={`${rowGrid} bg-surface-container rounded-sm font-mono font-medium text-[11px] tracking-[0.04em] text-muted uppercase`}>
+                <span className="min-w-0 truncate">DESCRIPTION & DELIVERABLES</span>
+                <span className="text-right">Qty. / Hrs</span>
+                <span className="text-right">Rate / Price</span>
+                <span className="text-right max-md:hidden">Amount</span>
             </div>
             {items.map((item) => (
-                <div className={`${rowGrid} items-center border-b border-line`} key={item.id}>
+                <div className={`${rowGrid} border-b border-line bg-surface-container-low rounded-sm`} key={item.id}>
+                    <div className="flex min-w-0 gap-1.5 items-center">
+                        <GripVertical stroke="var(--muted)" size={16} className="shrink-0" />
+                        <span className="flex shrink-0 flex-col -space-y-1">
+                            <ChevronUp stroke="var(--muted)" size={14} />
+                            <ChevronDown stroke="var(--muted)" size={14} />
+                        </span>
+                        <input
+                            className={`${cellInput} text-left`}
+                            value={item.description}
+                            onChange={(e) => onUpdate(item.id, "description", e.target.value)}
+                            aria-label="Item description"
+                        />
+                    </div>
                     <input
-                        className="w-full min-w-0 bg-transparent px-0.5 py-1.5 text-xs text-on-surface outline-none"
-                        value={item.description}
-                        onChange={(e) => onUpdate(item.id, "description", e.target.value)}
-                    />
-                    <input
-                        className="w-full min-w-0 bg-transparent px-0.5 py-1.5 text-xs text-on-surface outline-none text-right"
+                        className={`${cellInput} text-right tabular-nums`}
                         type="number"
+                        min={0}
                         value={item.quantity}
                         onChange={(e) => onUpdate(item.id, "quantity", e.target.value)}
+                        aria-label="Quantity"
                     />
                     <input
-                        className="w-full min-w-0 bg-transparent px-0.5 py-1.5 text-xs text-on-surface outline-none text-right"
+                        className={`${cellInput} text-right tabular-nums`}
                         type="number"
+                        min={0}
                         value={item.rate}
                         onChange={(e) => onUpdate(item.id, "rate", e.target.value)}
+                        aria-label="Rate"
                     />
-                    <output className="text-right text-xs font-semibold text-on-surface max-md:hidden">
-                        {money(item.quantity * item.rate)}
-                    </output>
+                    <div className="flex min-w-0 items-center justify-end gap-2">
+                        <output className="min-w-0 flex-1 truncate text-right text-xs font-semibold text-on-surface tabular-nums max-md:hidden">
+                            {money(item.quantity * item.rate)}
+                        </output>
+                        <button
+                            type="button"
+                            className="flex shrink-0 items-center justify-center rounded-sm p-1 text-muted transition-colors hover:bg-error-container hover:text-error"
+                            aria-label="Remove item"
+                        >
+                            <Trash size={16} />
+                        </button>
+                    </div>
                 </div>
             ))}
-            <div className="pt-3 text-[11px] text-muted">
-                Tip: Add a short, scannable description for each service or
-                deliverable.
+            <div className="flex flex-col pt-5 gap-4 border-t border-line">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center rounded-sm bg-surface-container gap-1 px-4 py-2 text-xs font-medium text-primary transition-colors hover:bg-surface-container-low cursor-pointer"
+                        onClick={onAdd}
+                    >
+                        <PlusCircleIcon stroke="var(--primary)" size={14} />
+                        Add another item
+                    </div>
+                    <div className="flex flex-wrap gap-4">
+                        <label className="flex cursor-pointer items-center gap-1 text-xs font-medium text-on-surface-variant">
+                            <input
+                                type="checkbox"
+                                name="applyDiscount"
+                                checked={applyDiscount}
+                                onChange={(e) => setApplyDiscount(e.target.checked)}
+                            />
+                            Apply Discount
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-1 text-xs font-medium text-on-surface-variant">
+                            <input
+                                type="checkbox"
+                                name="applyTax"
+                                checked={applyTax}
+                                onChange={(e) => setApplyTax(e.target.checked)}
+                            />
+                            Apply Tax / VAT
+                        </label>
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+                    <fieldset
+                        disabled={!applyDiscount}
+                        aria-disabled={!applyDiscount}
+                        className={`flex min-w-0 flex-col gap-3 rounded-sm p-4 border border-line bg-surface-container-low transition-opacity ${applyDiscount ? "" : "opacity-70"}`}
+                    >
+                        <div className="flex items-center gap-1.5">
+                            <Tag stroke="var(--primary)" size={14} />
+                            <p className="text-sm font-semibold text-on-surface">Discount Configuration</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <div className="min-w-32 flex-1">
+                                <label className={configLabel}>
+                                    <span>Discount Value</span>
+                                    <span className="relative block">
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={discountType === "percentage" ? 100 : undefined}
+                                            className={`${configInput} pr-8 text-right tabular-nums`}
+                                        />
+                                        <span aria-hidden="true" className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[13px] text-muted">{discountSuffix}</span>
+                                    </span>
+                                </label>
+                            </div>
+                            <div className="min-w-28 flex-1">
+                                <label className={configLabel}>
+                                    <span>Type</span>
+                                    <select
+                                        className={configInput}
+                                        value={discountType}
+                                        onChange={(e) => setDiscountType(e.target.value as "percentage" | "fixed")}
+                                    >
+                                        <option value="percentage">
+                                            Percentage %
+                                        </option>
+                                        <option value="fixed">
+                                            Fixed Price
+                                        </option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div className="w-full">
+                                <label htmlFor="reason" className={configLabel}>
+                                    <span>Reason (Optional)</span>
+                                    <input id="reason" type="text" placeholder="e.g. New Year Off" className={configInput} />
+                                </label>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset
+                        disabled={!applyTax}
+                        aria-disabled={!applyTax}
+                        className={`flex min-w-0 flex-col gap-3 rounded-sm p-4 border border-line bg-surface-container-low transition-opacity ${applyTax ? "" : "opacity-70"}`}
+                    >
+                        <div className="flex items-center gap-1.5">
+                            <SquareText stroke="var(--primary)" size={14} />
+                            <p className="text-sm font-semibold text-on-surface">Tax / VAT Configuration</p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <div className="min-w-28 flex-1">
+                                <label className={configLabel}>
+                                    <span>Tax Type</span>
+                                    <select className={configInput}>
+                                        <option>
+                                            VAT
+                                        </option>
+                                        <option>
+                                            Service Tax
+                                        </option>
+                                        <option>
+                                            GST
+                                        </option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div className="min-w-32 flex-1">
+                                <label className={configLabel}>
+                                    <span>Tax Rate (%)</span>
+                                    <span className="relative block">
+                                        <input type="number" min={0} max={100} className={`${configInput} pr-8 text-right tabular-nums`} />
+                                        <span aria-hidden="true" className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[13px] text-muted">%</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
             </div>
         </section>
     );

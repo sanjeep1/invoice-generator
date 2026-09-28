@@ -1,4 +1,5 @@
 import Field from "@/components/Field";
+import { CURRENCIES } from "@/lib/currencies";
 import { ReceiptText } from "lucide-react";
 import type { ChangeEvent } from "react";
 import type { InvoiceMeta } from "@/types/invoice";
@@ -14,21 +15,6 @@ const defaultValue: InvoiceMeta = {
     paymentTerms: "",
     currency: "",
 };
-
-const CURRENCIES = [
-    { code: "USD", label: "USD ($) — US Dollar" },
-    { code: "EUR", label: "EUR (€) — Euro" },
-    { code: "GBP", label: "GBP (£) — British Pound" },
-    { code: "INR", label: "INR (₹) — Indian Rupee" },
-    { code: "NPR", label: "NPR (₨) — Nepalese Rupee" },
-    { code: "JPY", label: "JPY (¥) — Japanese Yen" },
-    { code: "CNY", label: "CNY (¥) — Chinese Yuan" },
-    { code: "AUD", label: "AUD ($) — Australian Dollar" },
-    { code: "CAD", label: "CAD ($) — Canadian Dollar" },
-    { code: "CHF", label: "CHF — Swiss Franc" },
-    { code: "SGD", label: "SGD ($) — Singapore Dollar" },
-    { code: "AED", label: "AED — UAE Dirham" },
-];
 
 export default function MetadataCard({ value, onChange }: InvoiceMetaProps) {
     const details = value ?? defaultValue;
