@@ -1,5 +1,6 @@
 import Field from "@/components/Field";
 import { CURRENCIES } from "@/lib/currencies";
+import { SAMPLE_META } from "@/lib/sample-invoice";
 import { ReceiptText } from "lucide-react";
 import type { ChangeEvent } from "react";
 import type { InvoiceMeta } from "@/types/invoice";
@@ -32,7 +33,7 @@ export default function MetadataCard({ value, onChange }: InvoiceMetaProps) {
             </div>
             <div className="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-md:grid-cols-1">
                 <Field label="Invoice Number"
-                    placeholder="INV-2025-084"
+                    placeholder={SAMPLE_META.invoiceNumber}
                     value={details.invoiceNumber}
                     onChange={handleChange("invoiceNumber")}
                     autoComplete="off"
@@ -43,14 +44,14 @@ export default function MetadataCard({ value, onChange }: InvoiceMetaProps) {
                     onChange={handleChange("issueDate")}
                 />
                 <Field label="Payment Terms"
-                    placeholder="Net 15 Days"
+                    placeholder={SAMPLE_META.paymentTerms}
                     value={details.paymentTerms}
                     onChange={handleChange("paymentTerms")}
                     autoComplete="off" />
-                <label className="flex flex-col gap-1 text-xs text-on-surface-variant">
+                <label className="flex flex-col gap-1.5 text-xs leading-4 font-medium text-on-surface-variant">
                     <span>Currency</span>
                     <select
-                        className="h-7.5 w-full rounded-sm border-0 bg-surface-container-low px-2.5 py-1.5 text-[13px] text-on-surface outline-none focus:outline-2 focus:outline-primary-fixed-dim"
+                        className="h-9 w-full cursor-pointer rounded-sm border border-line bg-surface-container-lowest px-3 py-2 text-[13px] font-normal text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50"
                         value={details.currency}
                         onChange={handleChange("currency")}
                     >

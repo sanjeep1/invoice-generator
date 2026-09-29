@@ -5,6 +5,8 @@ import LogoUpload from "@/components/LogoUpload";
 import MetadataCard from "@/components/MetadataCard";
 import NotesCard from "@/components/NotesCard";
 import type { BankAccountDetails, InvoiceDetails, InvoiceItem, InvoiceMeta } from "@/types/invoice";
+import { SAMPLE_DETAILS } from "@/lib/sample-invoice";
+import { Building2, User } from "lucide-react";
 import BankDetails from "./BankDetails";
 
 type EditorPanelProps = {
@@ -50,6 +52,7 @@ export default function EditorPanel({
             <div className="grid grid-cols-2 gap-6 max-lg:grid-cols-1">
                 <DetailsCard
                     title="Your Details (Issuer)"
+                    icon={<User stroke="var(--primary)" size={18} />}
                     side="Sender"
                     media={
                         <LogoUpload
@@ -60,19 +63,21 @@ export default function EditorPanel({
                     value={details}
                     onChange={onDetailsChange}
                     fields={[
-                        { label: "Freelancer or Sender Name", fieldKey: "senderName" },
+                        { label: "Freelancer or Sender Name", fieldKey: "senderName", placeholder: SAMPLE_DETAILS.senderName },
                         {
                             label: "Business Entity / Trading Title",
                             fieldKey: "senderBusiness",
+                            placeholder: SAMPLE_DETAILS.senderBusiness,
                         },
-                        { label: "Business Email", fieldKey: "senderEmail" },
-                        { label: "Phone", fieldKey: "senderPhone", type: "tel" },
-                        { label: "Tax / PAN / VAT ID", fieldKey: "senderTaxId" },
-                        { label: "Country / City", fieldKey: "senderCountry" },
+                        { label: "Business Email", fieldKey: "senderEmail", placeholder: SAMPLE_DETAILS.senderEmail },
+                        { label: "Phone", fieldKey: "senderPhone", type: "tel", placeholder: SAMPLE_DETAILS.senderPhone },
+                        { label: "Tax / PAN / VAT ID", fieldKey: "senderTaxId", placeholder: SAMPLE_DETAILS.senderTaxId },
+                        { label: "Country / City", fieldKey: "senderCountry", placeholder: SAMPLE_DETAILS.senderCountry },
                     ]}
                 />
                 <DetailsCard
-                    title="♙ Client Details"
+                    title="Client Details"
+                    icon={<Building2 stroke="var(--primary)" size={18} />}
                     side="Recipient"
                     media={
                         // Saved-client choice fills the company-name field.
@@ -84,12 +89,12 @@ export default function EditorPanel({
                     value={details}
                     onChange={onDetailsChange}
                     fields={[
-                        { label: "Client or Company Name", fieldKey: "clientCompany" },
-                        { label: "Contact Person", fieldKey: "clientName" },
-                        { label: "Client Email", fieldKey: "clientEmail" },
-                        { label: "Phone", fieldKey: "clientPhone", type: "tel" },
-                        { label: "Tax / PAN / VAT ID", fieldKey: "clientTaxId" },
-                        { label: "Country / City", fieldKey: "clientAddress" },
+                        { label: "Client or Company Name", fieldKey: "clientCompany", placeholder: SAMPLE_DETAILS.clientCompany },
+                        { label: "Contact Person", fieldKey: "clientName", placeholder: SAMPLE_DETAILS.clientName },
+                        { label: "Client Email", fieldKey: "clientEmail", placeholder: SAMPLE_DETAILS.clientEmail },
+                        { label: "Phone", fieldKey: "clientPhone", type: "tel", placeholder: SAMPLE_DETAILS.clientPhone },
+                        { label: "Tax / PAN / VAT ID", fieldKey: "clientTaxId", placeholder: SAMPLE_DETAILS.clientTaxId },
+                        { label: "Country / City", fieldKey: "clientAddress", placeholder: SAMPLE_DETAILS.clientAddress },
                     ]}
                 />
             </div>

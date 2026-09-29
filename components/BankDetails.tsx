@@ -119,7 +119,7 @@ export default function BankDetails({ value, onChange }: BankDetailsProps) {
         <section className="flex flex-col gap-4 rounded-lg bg-white p-6 shadow-[0_1px_2px_0_rgba(0, 0, 0, 0.05)]">
             <div className="flex justify-between border-b border-surface-container pb-2">
                 <div className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5" />
+                    <Building2 className="h-5 w-5" stroke="var(--primary)" />
                     <h2 className="text-headline-sm text-on-surface">
                         Bank Details &amp; Payout Routing
                     </h2>

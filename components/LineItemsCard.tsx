@@ -20,12 +20,12 @@ const rowGrid =
     "grid grid-cols-[minmax(0,1fr)_72px_110px_120px] max-md:grid-cols-[minmax(0,1fr)_56px_84px_32px] items-center gap-2 px-2.5 py-2";
 
 const cellInput =
-    "h-8 w-full min-w-0 rounded-sm border-0 bg-white px-2.5 py-1.5 text-[13px] text-on-surface outline-none focus:outline-2 focus:outline-primary-fixed-dim";
+    "h-9 w-full min-w-0 rounded-sm border border-line bg-white px-3 py-2 text-[13px] text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition placeholder:text-muted/60 hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50";
 
-const configLabel = "flex min-w-0 flex-1 flex-col gap-1 text-xs text-on-surface-variant";
+const configLabel = "flex min-w-0 flex-1 flex-col gap-1.5 text-xs leading-4 font-medium text-on-surface-variant";
 
 const configInput =
-    "h-8 w-full rounded-sm border-0 bg-white px-2.5 py-1.5 text-[13px] text-on-surface outline-none focus:outline-2 focus:outline-primary-fixed-dim disabled:cursor-not-allowed";
+    "h-9 w-full rounded-sm border border-line bg-white px-3 py-2 text-[13px] text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition placeholder:text-muted/60 hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60";
 
 // Editable line items. Amounts format with the selected currency; numeric
 // inputs arrive as strings and are coerced by the parent updater.
@@ -124,6 +124,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                             className={`${cellInput} text-left`}
                             value={item.description}
                             onChange={(e) => onUpdate(item.id, "description", e.target.value)}
+                            placeholder="e.g. Website interface design"
                             aria-label="Item description"
                         />
                     </div>

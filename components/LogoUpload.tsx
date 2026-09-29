@@ -55,7 +55,7 @@ export default function LogoUpload({ value = "", onChange }: LogoUploadProps) {
     };
 
     return (
-        <div className="mb-2.5 flex items-center gap-2 rounded-sm border border-dashed border-divider bg-surface-container-low p-2.75">
+        <div className="flex items-center gap-2 rounded-sm border border-dashed border-divider bg-surface-container-low p-2.75">
             {value ? (
                 <span className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-surface-container bg-white">
                     <Image
@@ -80,7 +80,7 @@ export default function LogoUpload({ value = "", onChange }: LogoUploadProps) {
                 </span>
             )}
             <div className="flex flex-1 flex-col gap-0.5">
-                <b className="text-xs text-on-surface">Brand / Studio Logo</b>
+                <b className="text-xs text-on-surface">Brand Logo</b>
                 <small className="text-[11px] leading-3.75 text-on-surface-variant">
                     PNG, JPG or SVG on live letterhead
                 </small>

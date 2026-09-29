@@ -7,36 +7,34 @@ import Header from "@/components/Header";
 import InvoicePreview from "@/components/InvoicePreview";
 import UtilityBar from "@/components/UtilityBar";
 import type { BankAccountDetails, InvoiceDetails, InvoiceItem, InvoiceMeta } from "@/types/invoice";
+import { SAMPLE_ITEMS } from "@/lib/sample-invoice";
 
 export default function Home() {
-    const [items, setItems] = useState<InvoiceItem[]>([
-        { id: "1", description: "Identity & strategy workshop", quantity: 1, rate: 1800 },
-        { id: "2", description: "Website interface design", quantity: 2, rate: 1250 },
-    ]);
+    // Editor fields start empty so placeholder hints show; the preview
+    // falls back to lib/sample-invoice content until the user types.
+    const [items, setItems] = useState<InvoiceItem[]>([{ ...SAMPLE_ITEMS[0] }]);
     const [meta, setMeta] = useState<InvoiceMeta>({
-        invoiceNumber: "INV-2026-001",
-        issueDate: "2026-03-01",
-        paymentTerms: "Net 15 Days",
-        currency: "USD",
+        invoiceNumber: "",
+        issueDate: "",
+        paymentTerms: "",
+        currency: "",
     });
     const [details, setDetails] = useState<InvoiceDetails>({
-        senderName: "Sanjeep Banjara",
-        senderBusiness: "Sanjeep Ltd.",
-        senderEmail: "billing@sanjeep.com",
-        senderPhone: "9876543210",
-        senderTaxId: "849204910",
-        senderCountry: "Kathmandu, Nepal",
+        senderName: "",
+        senderBusiness: "",
+        senderEmail: "",
+        senderPhone: "",
+        senderTaxId: "",
+        senderCountry: "",
         senderLogo: "",
-        clientCompany: "Apple",
-        clientName: "Steve Jobs",
-        clientEmail: "hello@apple.com",
-        clientPhone: "9876543210",
-        clientTaxId: "942298120",
-        clientAddress: "California, USA",
+        clientCompany: "",
+        clientName: "",
+        clientEmail: "",
+        clientPhone: "",
+        clientTaxId: "",
+        clientAddress: "",
     });
-    const [notes, setNotes] = useState(
-        "Thank you for the opportunity to collaborate. Payment is due within 15 days of the invoice date.",
-    );
+    const [notes, setNotes] = useState("");
     const [bankDetails, setBankDetails] = useState<BankAccountDetails>({
         accountHolder: "",
         bankAndBranch: "",
@@ -46,18 +44,26 @@ export default function Home() {
         qrImage: "",
     });
 
-    const addItem = () =>
+    // Once the user edits anything, the preview leaves sample mode: empty
+    // fields then hide instead of falling back to sample content.
+    const [hasEdited, setHasEdited] = useState(false);
+    const markEdited = () => setHasEdited(true);
+
+    const addItem = () => {
+        markEdited();
         setItems([
             ...items,
-            { id: String(Date.now()), description: "New line item", quantity: 1, rate: 0 },
+            { id: String(Date.now()), description: "", quantity: 1, rate: 0 },
         ]);
+    };
 
     // String inputs for qty/rate coerce to numbers; description passes through.
     const updateItem = (
         id: string,
         key: "description" | "quantity" | "rate",
         value: string,
-    ) =>
+    ) => {
+        markEdited();
         setItems((list) =>
             list.map((i) =>
                 i.id === id
@@ -65,11 +71,15 @@ export default function Home() {
                     : i,
             ),
         );
+    };
 
-    const removeItem = (id: string) =>
+    const removeItem = (id: string) => {
+        markEdited();
         setItems((list) => list.filter((i) => i.id !== id));
+    };
 
-    const moveItem = (id: string, direction: "up" | "down") =>
+    const moveItem = (id: string, direction: "up" | "down") => {
+        markEdited();
         setItems((list) => {
             const index = list.findIndex((i) => i.id === id);
             if (index === -1) return list;
@@ -79,8 +89,10 @@ export default function Home() {
             [next[index], next[newIndex]] = [next[newIndex], next[index]];
             return next;
         });
+    };
 
-    const reorderItem = (dragId: string, targetId: string) =>
+    const reorderItem = (dragId: string, targetId: string) => {
+        markEdited();
         setItems((list) => {
             const from = list.findIndex((i) => i.id === dragId);
             const to = list.findIndex((i) => i.id === targetId);
@@ -90,16 +102,28 @@ export default function Home() {
             next.splice(to, 0, moved);
             return next;
         });
+    };
 
     // Patch-style updaters merge partial edits into each state slice.
-    const updateBankDetails = (patch: Partial<BankAccountDetails>) =>
+    const updateBankDetails = (patch: Partial<BankAccountDetails>) => {
+        markEdited();
         setBankDetails((prev) => ({ ...prev, ...patch }));
+    };
 
-    const updateMeta = (patch: Partial<InvoiceMeta>) =>
+    const updateMeta = (patch: Partial<InvoiceMeta>) => {
+        markEdited();
         setMeta((prev) => ({ ...prev, ...patch }));
+    };
 
-    const updateDetails = (patch: Partial<InvoiceDetails>) =>
+    const updateDetails = (patch: Partial<InvoiceDetails>) => {
+        markEdited();
         setDetails((prev) => ({ ...prev, ...patch }));
+    };
+
+    const updateNotes = (value: string) => {
+        markEdited();
+        setNotes(value);
+    };
 
     return (
         <main className="min-w-250 max-lg:min-w-0">
@@ -118,7 +142,7 @@ export default function Home() {
                     details={details}
                     onDetailsChange={updateDetails}
                     notes={notes}
-                    onNotesChange={setNotes}
+                    onNotesChange={updateNotes}
                     bankDetails={bankDetails}
                     onBankDetailsChange={updateBankDetails}
                 />
@@ -128,6 +152,7 @@ export default function Home() {
                     details={details}
                     notes={notes}
                     bankDetails={bankDetails}
+                    showSample={!hasEdited}
                 />
             </div>
             <ExportDrawer />

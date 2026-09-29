@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import Image from "next/image";
 import { formatCurrency, numberToWords } from "@/lib/utils";
+import { SAMPLE_DETAILS, SAMPLE_ITEMS, SAMPLE_META, SAMPLE_NOTES } from "@/lib/sample-invoice";
 import type {
     BankAccountDetails,
     InvoiceDetails,
@@ -16,6 +17,7 @@ type InvoicePreviewProps = {
     details?: InvoiceDetails;
     notes?: string;
     bankDetails?: BankAccountDetails;
+    showSample?: boolean;
 };
 
 const paperLabel = "font-inter text-[12px] tracking-wider text-muted";
@@ -84,32 +86,39 @@ export default function InvoicePreview({
     details,
     notes,
     bankDetails,
+    showSample = true,
 }: InvoicePreviewProps) {
-    // Raw trimmed values with no dummy fallbacks: the initial state in
-    // `app/page.tsx` carries the presentable defaults, so the sheet is full
-    // on first paint — but once the user clears a field, its line hides
-    // instead of resurrecting placeholder data.
+    // Sample mode (before the user edits anything): empty editor fields fall
+    // back to sample content so the sheet shows a full example invoice. Once
+    // editing starts, empty fields resolve to "" and their lines hide.
+    const pick = (raw: string | undefined, sample: string) =>
+        raw?.trim() || (showSample ? sample : "");
     const resolvedMeta = {
-        invoiceNumber: meta?.invoiceNumber?.trim() ?? "",
-        issueDate: meta?.issueDate?.trim() ?? "",
-        paymentTerms: meta?.paymentTerms?.trim() ?? "",
-        currency: meta?.currency?.trim() ?? "",
+        invoiceNumber: pick(meta?.invoiceNumber, SAMPLE_META.invoiceNumber),
+        issueDate: pick(meta?.issueDate, SAMPLE_META.issueDate),
+        paymentTerms: pick(meta?.paymentTerms, SAMPLE_META.paymentTerms),
+        currency: pick(meta?.currency, SAMPLE_META.currency),
     };
     const sender = {
-        name: details?.senderName?.trim() ?? "",
-        business: details?.senderBusiness?.trim() ?? "",
-        email: details?.senderEmail?.trim() ?? "",
-        country: details?.senderCountry?.trim() ?? "",
-        taxID: details?.senderTaxId?.trim() ?? "",
+        name: pick(details?.senderName, SAMPLE_DETAILS.senderName),
+        business: pick(details?.senderBusiness, SAMPLE_DETAILS.senderBusiness),
+        email: pick(details?.senderEmail, SAMPLE_DETAILS.senderEmail),
+        country: pick(details?.senderCountry, SAMPLE_DETAILS.senderCountry),
+        taxID: pick(details?.senderTaxId, SAMPLE_DETAILS.senderTaxId),
     };
     const client = {
-        company: details?.clientCompany?.trim() ?? "",
-        name: details?.clientName?.trim() ?? "",
-        email: details?.clientEmail?.trim() ?? "",
-        address: details?.clientAddress?.trim() ?? "",
-        taxId: details?.clientTaxId?.trim() ?? "",
+        company: pick(details?.clientCompany, SAMPLE_DETAILS.clientCompany),
+        name: pick(details?.clientName, SAMPLE_DETAILS.clientName),
+        email: pick(details?.clientEmail, SAMPLE_DETAILS.clientEmail),
+        address: pick(details?.clientAddress, SAMPLE_DETAILS.clientAddress),
+        taxId: pick(details?.clientTaxId, SAMPLE_DETAILS.clientTaxId),
     };
-    const resolvedNotes = notes?.trim() ?? "";
+    const resolvedNotes = pick(notes, SAMPLE_NOTES);
+    // Line items are user-owned once added; before that, preview sample rows.
+    const displayItems = useMemo(
+        () => (items.length > 0 ? items : showSample ? SAMPLE_ITEMS : []),
+        [items, showSample],
+    );
 
     // Shared payment-instructions block: only non-empty bank fields print
     const paymentInstructions = (
@@ -167,8 +176,8 @@ export default function InvoicePreview({
         }
     };
     const subtotal = useMemo(
-        () => items.reduce((sum, i) => sum + i.quantity * i.rate, 0),
-        [items],
+        () => displayItems.reduce((sum, i) => sum + i.quantity * i.rate, 0),
+        [displayItems],
     );
     const tax = subtotal * taxRate;
     const total = subtotal + tax;
@@ -280,7 +289,7 @@ export default function InvoicePreview({
                         <span className="text-right">RATE</span>
                         <span className="text-right">AMOUNT</span>
                     </div>
-                    {items.map((i) => (
+                    {displayItems.map((i) => (
                         <div
                             key={i.id}
                             className="grid grid-cols-[minmax(80px,1fr)_34px_62px_73px] gap-1.25 border-b border-line px-2 py-3.25 text-[11px] text-on-surface"
@@ -325,7 +334,10 @@ export default function InvoicePreview({
                     ) : (
                         paymentInstructions
                     )}
-                    <p className="mt-4 text-label-num-sm">Tax / PAN ID: {sender.taxID}</p>
+                    {sender.taxID ? (
+                        <p className="mt-4 text-label-num-sm">Tax / PAN ID: {sender.taxID}</p>
+                    ) : null}
+
                     <div>
                         {resolvedNotes ? (
                             <small className="mt-2 block text-[11px] text-muted">

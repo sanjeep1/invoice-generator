@@ -1,12 +1,10 @@
 import type { ChangeEvent } from "react";
+import { SAMPLE_NOTES } from "@/lib/sample-invoice";
 
 type NotesCardProps = {
     value?: string;
     onChange?: (value: string) => void;
 };
-
-const defaultNotes =
-    "Thank you for the opportunity to collaborate. Payment is due within 15 days of the invoice date.";
 
 export default function NotesCard({ value, onChange }: NotesCardProps) {
     const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -22,8 +20,9 @@ export default function NotesCard({ value, onChange }: NotesCardProps) {
                 </span>
             </div>
             <textarea
-                className="min-h-17 w-full resize-y rounded-sm border-0 bg-surface-container-low p-2.5 text-xs leading-4.5 text-on-surface-variant outline-none focus:outline-2 focus:outline-primary-fixed-dim"
-                value={value ?? defaultNotes}
+                className="min-h-20 w-full resize-y rounded-sm border border-line bg-surface-container-lowest p-3 text-[13px] leading-5 text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition placeholder:text-muted/60 hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50"
+                value={value ?? ""}
+                placeholder={SAMPLE_NOTES}
                 onChange={handleChange}
             />
         </section>
