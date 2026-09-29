@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { getCurrencySymbol } from "@/lib/currencies";
 import { formatCurrency } from "@/lib/utils";
-import type { InvoiceItem } from "@/types/invoice";
+import type { DiscountConfig, InvoiceItem, TaxConfig, TaxType } from "@/types/invoice";
 import { ChevronDown, ChevronUp, GripVertical, PlusCircleIcon, ShoppingCart, SquareText, Tag, Trash } from "lucide-react";
 
 type ItemField = "description" | "quantity" | "rate";
@@ -14,6 +14,10 @@ type LineItemsCardProps = {
     onMove: (id: string, direction: "up" | "down") => void;
     onReorder: (dragId: string, targetId: string) => void;
     currency?: string;
+    discount: DiscountConfig;
+    onDiscountChange: (patch: Partial<DiscountConfig>) => void;
+    tax: TaxConfig;
+    onTaxChange: (patch: Partial<TaxConfig>) => void;
 };
 
 const rowGrid =
@@ -29,13 +33,13 @@ const configInput =
 
 // Editable line items. Amounts format with the selected currency; numeric
 // inputs arrive as strings and are coerced by the parent updater.
-export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove, onReorder, currency = "USD" }: LineItemsCardProps) {
+export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove, onReorder, currency = "USD", discount, onDiscountChange, tax, onTaxChange }: LineItemsCardProps) {
 
-    const [applyTax, setApplyTax] = useState(false);
-    const [applyDiscount, setApplyDiscount] = useState(false);
-    const [discountType, setDiscountType] = useState<"percentage" | "fixed">("percentage");
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+    const { enabled: applyDiscount, type: discountType } = discount;
+    const { enabled: applyTax } = tax;
 
     const discountSuffix = discountType === "percentage" ? "%" : getCurrencySymbol(currency);
 
@@ -126,6 +130,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                             onChange={(e) => onUpdate(item.id, "description", e.target.value)}
                             placeholder="e.g. Website interface design"
                             aria-label="Item description"
+                            required
                         />
                     </div>
                     <input
@@ -135,6 +140,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                         value={item.quantity}
                         onChange={(e) => onUpdate(item.id, "quantity", e.target.value)}
                         aria-label="Quantity"
+                        required
                     />
                     <input
                         className={`${cellInput} text-right tabular-nums`}
@@ -143,6 +149,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                         value={item.rate}
                         onChange={(e) => onUpdate(item.id, "rate", e.target.value)}
                         aria-label="Rate"
+                        required
                     />
                     <div className="flex min-w-0 items-center justify-end gap-2">
                         <output className="min-w-0 flex-1 truncate text-right text-xs font-semibold text-on-surface tabular-nums max-md:hidden">
@@ -173,7 +180,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                                 type="checkbox"
                                 name="applyDiscount"
                                 checked={applyDiscount}
-                                onChange={(e) => setApplyDiscount(e.target.checked)}
+                                onChange={(e) => onDiscountChange({ enabled: e.target.checked })}
                             />
                             Apply Discount
                         </label>
@@ -182,7 +189,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                                 type="checkbox"
                                 name="applyTax"
                                 checked={applyTax}
-                                onChange={(e) => setApplyTax(e.target.checked)}
+                                onChange={(e) => onTaxChange({ enabled: e.target.checked })}
                             />
                             Apply Tax / VAT
                         </label>
@@ -207,6 +214,8 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                                             type="number"
                                             min={0}
                                             max={discountType === "percentage" ? 100 : undefined}
+                                            value={discount.value}
+                                            onChange={(e) => onDiscountChange({ value: Number(e.target.value) })}
                                             className={`${configInput} pr-8 text-right tabular-nums`}
                                         />
                                         <span aria-hidden="true" className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[13px] text-muted">{discountSuffix}</span>
@@ -219,7 +228,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                                     <select
                                         className={configInput}
                                         value={discountType}
-                                        onChange={(e) => setDiscountType(e.target.value as "percentage" | "fixed")}
+                                        onChange={(e) => onDiscountChange({ type: e.target.value as DiscountConfig["type"] })}
                                     >
                                         <option value="percentage">
                                             Percentage %
@@ -233,7 +242,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                             <div className="w-full">
                                 <label htmlFor="reason" className={configLabel}>
                                     <span>Reason (Optional)</span>
-                                    <input id="reason" type="text" placeholder="e.g. New Year Off" className={configInput} />
+                                    <input id="reason" type="text" placeholder="e.g. New Year Off" value={discount.reason} onChange={(e) => onDiscountChange({ reason: e.target.value })} className={configInput} />
                                 </label>
                             </div>
                         </div>
@@ -251,7 +260,11 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                             <div className="min-w-28 flex-1">
                                 <label className={configLabel}>
                                     <span>Tax Type</span>
-                                    <select className={configInput}>
+                                    <select
+                                        className={configInput}
+                                        value={tax.type}
+                                        onChange={(e) => onTaxChange({ type: e.target.value as TaxType })}
+                                    >
                                         <option>
                                             VAT
                                         </option>
@@ -268,7 +281,14 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                                 <label className={configLabel}>
                                     <span>Tax Rate (%)</span>
                                     <span className="relative block">
-                                        <input type="number" min={0} max={100} className={`${configInput} pr-8 text-right tabular-nums`} />
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            value={tax.rate}
+                                            onChange={(e) => onTaxChange({ rate: Number(e.target.value) })}
+                                            className={`${configInput} pr-8 text-right tabular-nums`}
+                                        />
                                         <span aria-hidden="true" className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[13px] text-muted">%</span>
                                     </span>
                                 </label>

@@ -83,3 +83,20 @@ export interface BankAccountDetails {
     paymentReference: string;
     qrImage: string;
 }
+
+export type DiscountType = "percentage" | "fixed";
+
+export interface DiscountConfig {
+    enabled: boolean;
+    type: DiscountType;
+    value: number;
+    reason: string;
+}
+
+export type TaxType = "VAT" | "Service Tax" | "GST";
+
+export interface TaxConfig {
+    enabled: boolean;
+    type: TaxType;
+    rate: number;
+}

@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import InvoicePreview from "@/components/InvoicePreview";
 import UtilityBar from "@/components/UtilityBar";
-import type { BankAccountDetails, InvoiceDetails, InvoiceItem, InvoiceMeta } from "@/types/invoice";
+import type { BankAccountDetails, DiscountConfig, InvoiceDetails, InvoiceItem, InvoiceMeta, TaxConfig } from "@/types/invoice";
 import { SAMPLE_ITEMS } from "@/lib/sample-invoice";
 
 export default function Home() {
@@ -35,7 +35,19 @@ export default function Home() {
         clientAddress: "",
     });
     const [notes, setNotes] = useState("");
-    const [bankDetails, setBankDetails] = useState<BankAccountDetails>({
+    // Discount/tax config lives here so the editor controls and the preview
+    // totals stay in sync. Toggling them doesn't leave sample mode.
+    const [discount, setDiscount] = useState<DiscountConfig>({
+        enabled: false,
+        type: "percentage",
+        value: 10,
+        reason: "",
+    });
+    const [tax, setTax] = useState<TaxConfig>({
+        enabled: false,
+        type: "VAT",
+        rate: 13,
+    });    const [bankDetails, setBankDetails] = useState<BankAccountDetails>({
         accountHolder: "",
         bankAndBranch: "",
         accountNumber: "",
@@ -125,6 +137,12 @@ export default function Home() {
         setNotes(value);
     };
 
+    const updateDiscount = (patch: Partial<DiscountConfig>) =>
+        setDiscount((prev) => ({ ...prev, ...patch }));
+
+    const updateTax = (patch: Partial<TaxConfig>) =>
+        setTax((prev) => ({ ...prev, ...patch }));
+
     return (
         <main className="min-w-250 max-lg:min-w-0">
             <Header />
@@ -145,6 +163,10 @@ export default function Home() {
                     onNotesChange={updateNotes}
                     bankDetails={bankDetails}
                     onBankDetailsChange={updateBankDetails}
+                    discount={discount}
+                    onDiscountChange={updateDiscount}
+                    tax={tax}
+                    onTaxChange={updateTax}
                 />
                 <InvoicePreview
                     items={items}
@@ -153,6 +175,8 @@ export default function Home() {
                     notes={notes}
                     bankDetails={bankDetails}
                     showSample={!hasEdited}
+                    discount={discount}
+                    tax={tax}
                 />
             </div>
             <ExportDrawer />

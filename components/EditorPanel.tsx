@@ -4,7 +4,7 @@ import LineItemsCard from "@/components/LineItemsCard";
 import LogoUpload from "@/components/LogoUpload";
 import MetadataCard from "@/components/MetadataCard";
 import NotesCard from "@/components/NotesCard";
-import type { BankAccountDetails, InvoiceDetails, InvoiceItem, InvoiceMeta } from "@/types/invoice";
+import type { BankAccountDetails, DiscountConfig, InvoiceDetails, InvoiceItem, InvoiceMeta, TaxConfig } from "@/types/invoice";
 import { SAMPLE_DETAILS } from "@/lib/sample-invoice";
 import { Building2, User } from "lucide-react";
 import BankDetails from "./BankDetails";
@@ -28,6 +28,10 @@ type EditorPanelProps = {
     onNotesChange: (value: string) => void;
     bankDetails: BankAccountDetails;
     onBankDetailsChange: (patch: Partial<BankAccountDetails>) => void;
+    discount: DiscountConfig;
+    onDiscountChange: (patch: Partial<DiscountConfig>) => void;
+    tax: TaxConfig;
+    onTaxChange: (patch: Partial<TaxConfig>) => void;
 };
 
 export default function EditorPanel({
@@ -45,6 +49,10 @@ export default function EditorPanel({
     onNotesChange,
     bankDetails,
     onBankDetailsChange,
+    discount,
+    onDiscountChange,
+    tax,
+    onTaxChange,
 }: EditorPanelProps) {
     return (
         <section className="flex flex-col gap-6">
@@ -63,13 +71,13 @@ export default function EditorPanel({
                     value={details}
                     onChange={onDetailsChange}
                     fields={[
-                        { label: "Freelancer or Sender Name", fieldKey: "senderName", placeholder: SAMPLE_DETAILS.senderName },
+                        { label: "Freelancer or Sender Name", fieldKey: "senderName", placeholder: SAMPLE_DETAILS.senderName, required: true },
                         {
                             label: "Business Entity / Trading Title",
                             fieldKey: "senderBusiness",
                             placeholder: SAMPLE_DETAILS.senderBusiness,
                         },
-                        { label: "Business Email", fieldKey: "senderEmail", placeholder: SAMPLE_DETAILS.senderEmail },
+                        { label: "Email", fieldKey: "senderEmail", placeholder: SAMPLE_DETAILS.senderEmail, required: true },
                         { label: "Phone", fieldKey: "senderPhone", type: "tel", placeholder: SAMPLE_DETAILS.senderPhone },
                         { label: "Tax / PAN / VAT ID", fieldKey: "senderTaxId", placeholder: SAMPLE_DETAILS.senderTaxId },
                         { label: "Country / City", fieldKey: "senderCountry", placeholder: SAMPLE_DETAILS.senderCountry },
@@ -89,9 +97,9 @@ export default function EditorPanel({
                     value={details}
                     onChange={onDetailsChange}
                     fields={[
-                        { label: "Client or Company Name", fieldKey: "clientCompany", placeholder: SAMPLE_DETAILS.clientCompany },
+                        { label: "Client or Company Name", fieldKey: "clientCompany", placeholder: SAMPLE_DETAILS.clientCompany, required: true },
                         { label: "Contact Person", fieldKey: "clientName", placeholder: SAMPLE_DETAILS.clientName },
-                        { label: "Client Email", fieldKey: "clientEmail", placeholder: SAMPLE_DETAILS.clientEmail },
+                        { label: "Email", fieldKey: "clientEmail", placeholder: SAMPLE_DETAILS.clientEmail, required: true },
                         { label: "Phone", fieldKey: "clientPhone", type: "tel", placeholder: SAMPLE_DETAILS.clientPhone },
                         { label: "Tax / PAN / VAT ID", fieldKey: "clientTaxId", placeholder: SAMPLE_DETAILS.clientTaxId },
                         { label: "Country / City", fieldKey: "clientAddress", placeholder: SAMPLE_DETAILS.clientAddress },
@@ -106,6 +114,10 @@ export default function EditorPanel({
                 onMove={onMoveItem}
                 onReorder={onReorderItem}
                 currency={meta.currency}
+                discount={discount}
+                onDiscountChange={onDiscountChange}
+                tax={tax}
+                onTaxChange={onTaxChange}
             />
             <NotesCard value={notes} onChange={onNotesChange} />
             <BankDetails value={bankDetails} onChange={onBankDetailsChange} />

@@ -4,20 +4,23 @@ import { formatCurrency, numberToWords } from "@/lib/utils";
 import { SAMPLE_DETAILS, SAMPLE_ITEMS, SAMPLE_META, SAMPLE_NOTES } from "@/lib/sample-invoice";
 import type {
     BankAccountDetails,
+    DiscountConfig,
     InvoiceDetails,
     InvoiceItem,
     InvoiceMeta,
+    TaxConfig,
 } from "@/types/invoice";
 import { SquareDimensions } from "lucide-react";
 
 type InvoicePreviewProps = {
     items: InvoiceItem[];
-    taxRate?: number;
     meta?: InvoiceMeta;
     details?: InvoiceDetails;
     notes?: string;
     bankDetails?: BankAccountDetails;
     showSample?: boolean;
+    discount?: DiscountConfig;
+    tax?: TaxConfig;
 };
 
 const paperLabel = "font-inter text-[12px] tracking-wider text-muted";
@@ -81,12 +84,13 @@ function parseCurrencyCode(raw: string): string {
 
 export default function InvoicePreview({
     items,
-    taxRate = 0.19,
     meta,
     details,
     notes,
     bankDetails,
     showSample = true,
+    discount,
+    tax,
 }: InvoicePreviewProps) {
     // Sample mode (before the user edits anything): empty editor fields fall
     // back to sample content so the sheet shows a full example invoice. Once
@@ -179,8 +183,23 @@ export default function InvoicePreview({
         () => displayItems.reduce((sum, i) => sum + i.quantity * i.rate, 0),
         [displayItems],
     );
-    const tax = subtotal * taxRate;
-    const total = subtotal + tax;
+    // Discount comes off the subtotal (percentage clamped to 0–100, fixed
+    // clamped to the subtotal); tax then applies to the discounted base.
+    const discountAmount = useMemo(() => {
+        if (!discount?.enabled) return 0;
+        const raw = Number.isFinite(discount.value) ? Math.max(0, discount.value) : 0;
+        const amount =
+            discount.type === "percentage"
+                ? (subtotal * Math.min(raw, 100)) / 100
+                : raw;
+        return Math.min(amount, subtotal);
+    }, [discount, subtotal]);
+    const taxableBase = subtotal - discountAmount;
+    const taxRate = tax?.enabled
+        ? Math.min(Math.max(Number.isFinite(tax.rate) ? tax.rate : 0, 0), 100) / 100
+        : 0;
+    const taxAmount = taxableBase * taxRate;
+    const total = taxableBase + taxAmount;
     const amountInWords = numberToWords(total, currencyCode);
     const issuedLabel = formatPaperDate(resolvedMeta.issueDate);
     const dueLabel = formatDueDate(resolvedMeta.issueDate, resolvedMeta.paymentTerms);
@@ -305,10 +324,20 @@ export default function InvoicePreview({
                     <span className="flex justify-between text-[11px] text-on-surface-variant">
                         Subtotal <b className="text-on-surface">{money(subtotal)}</b>
                     </span>
-                    <span className="flex justify-between text-[11px] text-on-surface-variant">
-                        VAT ({Math.round(taxRate * 100)}%){" "}
-                        <b className="text-on-surface">{money(tax)}</b>
-                    </span>
+                    {discount?.enabled ? (
+                        <span className="flex justify-between text-[11px] text-on-surface-variant">
+                            Discount
+                            {discount.type === "percentage" ? ` (${discount.value}%)` : ""}
+                            {discount.reason.trim() ? ` · ${discount.reason.trim()}` : ""}{" "}
+                            <b className="text-on-surface">−{money(discountAmount)}</b>
+                        </span>
+                    ) : null}
+                    {tax?.enabled ? (
+                        <span className="flex justify-between text-[11px] text-on-surface-variant">
+                            {tax.type} ({tax.rate}%){" "}
+                            <b className="text-on-surface">{money(taxAmount)}</b>
+                        </span>
+                    ) : null}
                     <strong className="flex justify-between border-t border-ink pt-3 text-sm text-on-surface">
                         Total due <b>{money(total)}</b>
                     </strong>

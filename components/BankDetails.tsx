@@ -137,24 +137,27 @@ export default function BankDetails({ value, onChange }: BankDetailsProps) {
                             value={details.accountHolder}
                             onChange={handleChange("accountHolder")}
                             autoComplete="off"
+                            required
                         />
                     </div>
                     <div className="col-span-2 max-md:col-span-1">
                         <Field
                             label="Bank and Branch"
-                            placeholder="e.g. Deutsche Bank, Berlin Hauptstrasse Branch"
+                            placeholder="e.g. Nabil Bank, Balaju Branch"
                             value={details.bankAndBranch}
                             onChange={handleChange("bankAndBranch")}
                             autoComplete="off"
+                            required
                         />
                     </div>
                     <Field
                         label="Account Number"
-                        placeholder="e.g. 0532 0130 00"
+                        placeholder="e.g. 0532013000"
                         value={details.accountNumber}
                         onChange={handleChange("accountNumber")}
                         autoComplete="off"
                         inputMode="numeric"
+                        required
                     />
                     <Field
                         label="SWIFT Code"

@@ -8,6 +8,7 @@ export type DetailField = {
     fieldKey: keyof InvoiceDetails;
     type?: string;
     placeholder?: string;
+    required?: boolean;
 };
 
 type DetailsCardProps = {
@@ -45,6 +46,7 @@ export default function DetailsCard({ icon, title, side, fields, media, value, o
                         onChange={handleChange(field.fieldKey)}
                         type={field.type}
                         placeholder={field.placeholder}
+                        required={field.required}
                     />
                 ))}
             </div>
