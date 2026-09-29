@@ -10,6 +10,9 @@ type LineItemsCardProps = {
     items: InvoiceItem[];
     onAdd: () => void;
     onUpdate: (id: string, key: ItemField, value: string) => void;
+    onRemove: (id: string) => void;
+    onMove: (id: string, direction: "up" | "down") => void;
+    onReorder: (dragId: string, targetId: string) => void;
     currency?: string;
 };
 
@@ -26,11 +29,13 @@ const configInput =
 
 // Editable line items. Amounts format with the selected currency; numeric
 // inputs arrive as strings and are coerced by the parent updater.
-export default function LineItemsCard({ items, onAdd, onUpdate, currency = "USD" }: LineItemsCardProps) {
+export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove, onReorder, currency = "USD" }: LineItemsCardProps) {
 
     const [applyTax, setApplyTax] = useState(false);
     const [applyDiscount, setApplyDiscount] = useState(false);
     const [discountType, setDiscountType] = useState<"percentage" | "fixed">("percentage");
+    const [draggedId, setDraggedId] = useState<string | null>(null);
+    const [dragOverId, setDragOverId] = useState<string | null>(null);
 
     const discountSuffix = discountType === "percentage" ? "%" : getCurrencySymbol(currency);
 
@@ -57,13 +62,63 @@ export default function LineItemsCard({ items, onAdd, onUpdate, currency = "USD"
                 <span className="text-right">Rate / Price</span>
                 <span className="text-right max-md:hidden">Amount</span>
             </div>
-            {items.map((item) => (
-                <div className={`${rowGrid} border-b border-line bg-surface-container-low rounded-sm`} key={item.id}>
+            {items.map((item, index) => (
+                <div
+                    className={`${rowGrid} border-b border-line bg-surface-container-low rounded-sm transition-opacity ${draggedId === item.id ? "opacity-50" : ""} ${dragOverId === item.id && draggedId !== item.id ? "outline-2 outline-primary-fixed-dim" : ""}`}
+                    key={item.id}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                        if (item.id !== draggedId) setDragOverId(item.id);
+                    }}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        const src = draggedId ?? e.dataTransfer.getData("text/plain");
+                        if (src && src !== item.id) onReorder(src, item.id);
+                        setDraggedId(null);
+                        setDragOverId(null);
+                    }}
+                    onDragLeave={() => {
+                        setDragOverId((prev) => (prev === item.id ? null : prev));
+                    }}
+                >
                     <div className="flex min-w-0 gap-1.5 items-center">
-                        <GripVertical stroke="var(--muted)" size={16} className="shrink-0" />
+                        <span
+                            draggable
+                            onDragStart={(e) => {
+                                e.dataTransfer.effectAllowed = "move";
+                                e.dataTransfer.setData("text/plain", item.id);
+                                setDraggedId(item.id);
+                            }}
+                            onDragEnd={() => {
+                                setDraggedId(null);
+                                setDragOverId(null);
+                            }}
+                            className="flex shrink-0 cursor-grab touch-none items-center rounded-sm p-0.5 select-none active:cursor-grabbing"
+                            title="Drag to reorder"
+                            aria-label={`Drag to reorder ${item.description || "item"}`}
+                        >
+                            <GripVertical stroke="var(--muted)" size={16} className="pointer-events-none shrink-0" />
+                        </span>
                         <span className="flex shrink-0 flex-col -space-y-1">
-                            <ChevronUp stroke="var(--muted)" size={14} />
-                            <ChevronDown stroke="var(--muted)" size={14} />
+                            <button
+                                type="button"
+                                onClick={() => onMove(item.id, "up")}
+                                disabled={index === 0}
+                                aria-label="Move item up"
+                                className="rounded-sm p-0.5 text-muted transition-colors hover:bg-surface-container hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted"
+                            >
+                                <ChevronUp stroke="currentColor" size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => onMove(item.id, "down")}
+                                disabled={index === items.length - 1}
+                                aria-label="Move item down"
+                                className="rounded-sm p-0.5 text-muted transition-colors hover:bg-surface-container hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted"
+                            >
+                                <ChevronDown stroke="currentColor" size={14} />
+                            </button>
                         </span>
                         <input
                             className={`${cellInput} text-left`}
@@ -94,6 +149,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, currency = "USD"
                         </output>
                         <button
                             type="button"
+                            onClick={() => onRemove(item.id)}
                             className="flex shrink-0 items-center justify-center rounded-sm p-1 text-muted transition-colors hover:bg-error-container hover:text-error"
                             aria-label="Remove item"
                         >

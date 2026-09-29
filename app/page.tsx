@@ -66,6 +66,31 @@ export default function Home() {
             ),
         );
 
+    const removeItem = (id: string) =>
+        setItems((list) => list.filter((i) => i.id !== id));
+
+    const moveItem = (id: string, direction: "up" | "down") =>
+        setItems((list) => {
+            const index = list.findIndex((i) => i.id === id);
+            if (index === -1) return list;
+            const newIndex = direction === "up" ? index - 1 : index + 1;
+            if (newIndex < 0 || newIndex >= list.length) return list;
+            const next = [...list];
+            [next[index], next[newIndex]] = [next[newIndex], next[index]];
+            return next;
+        });
+
+    const reorderItem = (dragId: string, targetId: string) =>
+        setItems((list) => {
+            const from = list.findIndex((i) => i.id === dragId);
+            const to = list.findIndex((i) => i.id === targetId);
+            if (from === -1 || to === -1 || from === to) return list;
+            const next = [...list];
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved);
+            return next;
+        });
+
     // Patch-style updaters merge partial edits into each state slice.
     const updateBankDetails = (patch: Partial<BankAccountDetails>) =>
         setBankDetails((prev) => ({ ...prev, ...patch }));
@@ -85,6 +110,9 @@ export default function Home() {
                     items={items}
                     onAddItem={addItem}
                     onUpdateItem={updateItem}
+                    onRemoveItem={removeItem}
+                    onMoveItem={moveItem}
+                    onReorderItem={reorderItem}
                     meta={meta}
                     onMetaChange={updateMeta}
                     details={details}

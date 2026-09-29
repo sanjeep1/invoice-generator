@@ -15,6 +15,9 @@ type EditorPanelProps = {
         key: "description" | "quantity" | "rate",
         value: string,
     ) => void;
+    onRemoveItem: (id: string) => void;
+    onMoveItem: (id: string, direction: "up" | "down") => void;
+    onReorderItem: (dragId: string, targetId: string) => void;
     meta: InvoiceMeta;
     onMetaChange: (patch: Partial<InvoiceMeta>) => void;
     details: InvoiceDetails;
@@ -29,6 +32,9 @@ export default function EditorPanel({
     items,
     onAddItem,
     onUpdateItem,
+    onRemoveItem,
+    onMoveItem,
+    onReorderItem,
     meta,
     onMetaChange,
     details,
@@ -91,6 +97,9 @@ export default function EditorPanel({
                 items={items}
                 onAdd={onAddItem}
                 onUpdate={onUpdateItem}
+                onRemove={onRemoveItem}
+                onMove={onMoveItem}
+                onReorder={onReorderItem}
                 currency={meta.currency}
             />
             <NotesCard value={notes} onChange={onNotesChange} />
