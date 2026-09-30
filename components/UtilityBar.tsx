@@ -3,7 +3,7 @@ export default function UtilityBar() {
     //     "rounded-sm bg-transparent p-2 text-xs text-on-surface-variant transition-colors hover:bg-surface-container-low";
 
     return (
-        <section className="flex h-12.5 items-center justify-between border-b border-line bg-white px-6 text-xs text-on-surface-variant max-lg:px-4">
+        <section className="flex h-12.5 items-center justify-between border-b border-line bg-white px-6 text-xs text-on-surface-variant max-lg:px-4 print:hidden">
             <div className="flex items-center gap-2">
                 <span className="text-[11px] text-primary-container">●</span>
                 <b className="text-on-surface">Draft invoice</b>

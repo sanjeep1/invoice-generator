@@ -1,24 +1,35 @@
 "use client";
 import { useState } from "react";
 import EditorPanel from "@/components/EditorPanel";
-import ExportDrawer from "@/components/ExportDrawer";
+// import ExportDrawer from "@/components/ExportDrawer";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import InvoicePreview from "@/components/InvoicePreview";
 import UtilityBar from "@/components/UtilityBar";
+import { downloadInvoicePdf } from "@/lib/export-pdf";
+import { buildShareSubject, buildShareText } from "@/lib/share-invoice";
 import type { BankAccountDetails, DiscountConfig, InvoiceDetails, InvoiceItem, InvoiceMeta, TaxConfig } from "@/types/invoice";
 import { SAMPLE_ITEMS } from "@/lib/sample-invoice";
+
+// Local-time ISO date (yyyy-mm-dd) for the date input. Built manually to
+// avoid the UTC-day shift of `toISOString`.
+function todayISO(): string {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${now.getFullYear()}-${month}-${day}`;
+}
 
 export default function Home() {
     // Editor fields start empty so placeholder hints show; the preview
     // falls back to lib/sample-invoice content until the user types.
     const [items, setItems] = useState<InvoiceItem[]>([{ ...SAMPLE_ITEMS[0] }]);
-    const [meta, setMeta] = useState<InvoiceMeta>({
+    const [meta, setMeta] = useState<InvoiceMeta>(() => ({
         invoiceNumber: "",
-        issueDate: "",
+        issueDate: todayISO(),
         paymentTerms: "",
         currency: "",
-    });
+    }));
     const [details, setDetails] = useState<InvoiceDetails>({
         senderName: "",
         senderBusiness: "",
@@ -47,7 +58,7 @@ export default function Home() {
         enabled: false,
         type: "VAT",
         rate: 13,
-    });    const [bankDetails, setBankDetails] = useState<BankAccountDetails>({
+    }); const [bankDetails, setBankDetails] = useState<BankAccountDetails>({
         accountHolder: "",
         bankAndBranch: "",
         accountNumber: "",
@@ -143,11 +154,80 @@ export default function Home() {
     const updateTax = (patch: Partial<TaxConfig>) =>
         setTax((prev) => ({ ...prev, ...patch }));
 
+    // Clears every entered value and returns the preview to sample mode.
+    const resetAll = () => {
+        setItems([]);
+        setMeta({
+            invoiceNumber: "",
+            issueDate: todayISO(),
+            paymentTerms: "",
+            currency: "",
+        });
+        setDetails({
+            senderName: "",
+            senderBusiness: "",
+            senderEmail: "",
+            senderPhone: "",
+            senderTaxId: "",
+            senderCountry: "",
+            senderLogo: "",
+            clientCompany: "",
+            clientName: "",
+            clientEmail: "",
+            clientPhone: "",
+            clientTaxId: "",
+            clientAddress: "",
+        });
+        setNotes("");
+        setBankDetails({
+            accountHolder: "",
+            bankAndBranch: "",
+            accountNumber: "",
+            swiftCode: "",
+            paymentReference: "",
+            qrImage: "",
+        });
+        setDiscount({ enabled: false, type: "percentage", value: 10, reason: "" });
+        setTax({ enabled: false, type: "VAT", rate: 13 });
+        setHasEdited(false);
+    };
+
+    // Print CSS (see globals.css) isolates the invoice sheet on paper.
+    const handlePrint = () => window.print();
+
+    // Direct vector-PDF download — no print dialog.
+    const handleExportPdf = () =>
+        downloadInvoicePdf({
+            items,
+            meta,
+            details,
+            notes,
+            bankDetails,
+            discount,
+            tax,
+            showSample: !hasEdited,
+        });
+
     return (
-        <main className="min-w-250 max-lg:min-w-0">
-            <Header />
+        <main className="min-w-250 max-lg:min-w-0 print:min-w-0">
+            <Header
+                onReset={resetAll}
+                onPrint={handlePrint}
+                onExportPdf={handleExportPdf}
+                shareSubject={buildShareSubject({ meta, showSample: !hasEdited })}
+                shareText={buildShareText({
+                    items,
+                    meta,
+                    details,
+                    notes,
+                    bankDetails,
+                    discount,
+                    tax,
+                    showSample: !hasEdited,
+                })}
+            />
             <UtilityBar />
-            <div className="mx-auto mt-6 grid max-w-308 grid-cols-[708px_minmax(0,1fr)] gap-6 pb-32.5 max-lg:m-4 max-lg:grid-cols-1 max-lg:px-4 max-lg:pb-32.5">
+            <div className="mx-auto mt-6 grid max-w-308 grid-cols-[708px_minmax(0,1fr)] gap-6 pb-32.5 max-lg:m-4 max-lg:grid-cols-1 max-lg:px-4 max-lg:pb-32.5 print:m-0 print:max-w-none print:grid-cols-1 print:gap-0 print:px-0 print:pb-0">
                 <EditorPanel
                     items={items}
                     onAddItem={addItem}
@@ -179,7 +259,7 @@ export default function Home() {
                     tax={tax}
                 />
             </div>
-            <ExportDrawer />
+            {/* <ExportDrawer /> */}
             <Footer />
         </main>
     );

@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import Image from "next/image";
 import { formatCurrency, numberToWords } from "@/lib/utils";
+import { computeTotals, parseCurrencyCode } from "@/lib/invoice-totals";
+import { formatDueDate, formatPaperDate } from "@/lib/invoice-dates";
 import { SAMPLE_DETAILS, SAMPLE_ITEMS, SAMPLE_META, SAMPLE_NOTES } from "@/lib/sample-invoice";
 import type {
     BankAccountDetails,
@@ -25,62 +27,6 @@ type InvoicePreviewProps = {
 
 const paperLabel = "font-inter text-[12px] tracking-wider text-muted";
 const paperValue = "text-[11px] text-on-surface";
-
-// Strict ISO parser (local time, avoiding the UTC shift of `new Date(str)`).
-// Returns null for blank/invalid input so callers can show a fallback.
-function parseIssueDate(raw: string): Date | null {
-    const trimmed = raw.trim();
-    if (!trimmed) return null;
-    const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!isoMatch) return null;
-    const [, y, m, d] = isoMatch;
-    const date = new Date(Number(y), Number(m) - 1, Number(d));
-    return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function formatPaperDate(raw: string): string | null {
-    const parsed = parseIssueDate(raw);
-    if (!parsed) return null;
-    return new Intl.DateTimeFormat("en-US", {
-        month: "long",
-        day: "2-digit",
-        year: "numeric",
-    }).format(parsed);
-}
-
-// Extracts the day count from free text like "Net 15 Days".
-function parseTermsDays(raw: string): number | null {
-    const match = raw.match(/(\d+)/);
-    if (!match) return null;
-    const days = Number(match[1]);
-    return Number.isNaN(days) ? null : days;
-}
-
-// Due date = issue date + terms days; null when either is unparseable.
-function formatDueDate(issueRaw: string, termsRaw: string): string | null {
-    const issued = parseIssueDate(issueRaw);
-    const days = parseTermsDays(termsRaw);
-    if (!issued || days === null) return null;
-    const due = new Date(issued);
-    due.setDate(due.getDate() + days);
-    return new Intl.DateTimeFormat("en-US", {
-        month: "long",
-        day: "2-digit",
-        year: "numeric",
-    }).format(due);
-}
-
-// Normalizes currency input to an Intl code: 3-letter codes pass through,
-// bare symbols (€/₹/£/$) map to their currency, otherwise USD.
-function parseCurrencyCode(raw: string): string {
-    const codeMatch = raw.match(/\b([A-Za-z]{3})\b/);
-    if (codeMatch) return codeMatch[1].toUpperCase();
-    if (raw.includes("€")) return "EUR";
-    if (raw.includes("₹")) return "INR";
-    if (raw.includes("£")) return "GBP";
-    if (raw.includes("$")) return "USD";
-    return "USD";
-}
 
 export default function InvoicePreview({
     items,
@@ -179,27 +125,10 @@ export default function InvoicePreview({
             return formatCurrency(amount);
         }
     };
-    const subtotal = useMemo(
-        () => displayItems.reduce((sum, i) => sum + i.quantity * i.rate, 0),
-        [displayItems],
+    const { subtotal, discountAmount, taxAmount, total } = useMemo(
+        () => computeTotals(displayItems, discount, tax),
+        [displayItems, discount, tax],
     );
-    // Discount comes off the subtotal (percentage clamped to 0–100, fixed
-    // clamped to the subtotal); tax then applies to the discounted base.
-    const discountAmount = useMemo(() => {
-        if (!discount?.enabled) return 0;
-        const raw = Number.isFinite(discount.value) ? Math.max(0, discount.value) : 0;
-        const amount =
-            discount.type === "percentage"
-                ? (subtotal * Math.min(raw, 100)) / 100
-                : raw;
-        return Math.min(amount, subtotal);
-    }, [discount, subtotal]);
-    const taxableBase = subtotal - discountAmount;
-    const taxRate = tax?.enabled
-        ? Math.min(Math.max(Number.isFinite(tax.rate) ? tax.rate : 0, 0), 100) / 100
-        : 0;
-    const taxAmount = taxableBase * taxRate;
-    const total = taxableBase + taxAmount;
     const amountInWords = numberToWords(total, currencyCode);
     const issuedLabel = formatPaperDate(resolvedMeta.issueDate);
     const dueLabel = formatDueDate(resolvedMeta.issueDate, resolvedMeta.paymentTerms);
@@ -209,8 +138,8 @@ export default function InvoicePreview({
     );
 
     return (
-        <aside className="min-h-337.5 rounded-lg p-4 max-lg:min-h-0 max-md:p-2 gap-4">
-            <div className="mb-2 px-2 flex items-center justify-between">
+        <aside className="min-h-337.5 rounded-lg p-4 max-lg:min-h-0 max-md:p-2 gap-4 print:min-h-0 print:p-0">
+            <div className="mb-2 px-2 flex items-center justify-between print:hidden">
                 <div className="flex items-center gap-2 font-semibold text-[11px] text-on-surface">
                     <div className="w-2.5 h-2.5 rounded-4xl bg-[#4EDEA3]" />
                     <span>LIVE PREVIEW (A4 STANDARD)</span>
@@ -222,7 +151,7 @@ export default function InvoicePreview({
                     <SquareDimensions width={22} height={18} />
                 </div>
             </div>
-            <div className="flex flex-col mx-auto min-h-262.5 bg-white px-9.5 py-10.5 gap-6 shadow-sheet max-lg:max-w-150 max-md:px-5 max-md:py-7">
+            <div className="flex flex-col mx-auto min-h-262.5 bg-white px-9.5 py-10.5 gap-6 shadow-sheet max-lg:max-w-150 max-md:px-5 max-md:py-7 print:min-h-0 print:shadow-none">
                 <div className="flex items-center justify-between pb-6 gap-1.5 text-primary">
                     <div className="flex flex-row items-center gap-2">
                         {details?.senderLogo ? (
@@ -249,7 +178,7 @@ export default function InvoicePreview({
                             ) : null}
                         </div>
                     </div>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col items-end gap-1 text-center">
                         <p className="py-1 px-3 rounded-sm bg-surface-container-high text-label-num-sm uppercase">INVOICE</p>
                         {resolvedMeta.invoiceNumber ? (
                             <p className="text-headline-sm text-on-surface">{resolvedMeta.invoiceNumber}</p>

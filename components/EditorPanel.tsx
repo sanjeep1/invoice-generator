@@ -55,7 +55,7 @@ export default function EditorPanel({
     onTaxChange,
 }: EditorPanelProps) {
     return (
-        <section className="flex flex-col gap-6">
+        <section className="flex flex-col gap-6 print:hidden">
             <MetadataCard value={meta} onChange={onMetaChange} />
             <div className="grid grid-cols-2 gap-6 max-lg:grid-cols-1">
                 <DetailsCard
