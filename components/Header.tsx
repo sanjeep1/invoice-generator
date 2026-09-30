@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import Logo from "@/public/brandlogo.svg";
-import { Check, ChevronDown, Copy, Download, FolderOpen, Mail, Printer, Repeat2, Share2Icon } from "lucide-react";
+import { Check, ChevronDown, Copy, Download, Mail, Menu, Printer, Repeat2, Share2Icon } from "lucide-react";
 
 type HeaderProps = {
     onReset?: () => void;
@@ -17,8 +17,10 @@ const ghostButton =
 
 const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", shareText = "" }: HeaderProps) => {
     const [shareOpen, setShareOpen] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const shareRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     // Close the share menu on outside click or Escape.
     useEffect(() => {
@@ -38,6 +40,25 @@ const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", share
             document.removeEventListener("keydown", onKeyDown);
         };
     }, [shareOpen]);
+
+    // Same dismiss behavior for the mobile overflow menu.
+    useEffect(() => {
+        if (!menuOpen) return;
+        const onPointerDown = (e: PointerEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setMenuOpen(false);
+            }
+        };
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setMenuOpen(false);
+        };
+        document.addEventListener("pointerdown", onPointerDown);
+        document.addEventListener("keydown", onKeyDown);
+        return () => {
+            document.removeEventListener("pointerdown", onPointerDown);
+            document.removeEventListener("keydown", onKeyDown);
+        };
+    }, [menuOpen]);
 
     const copyText = async () => {
         try {
@@ -99,7 +120,7 @@ const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", share
                             |
                         </span>
                         <span className="hidden text-sm whitespace-nowrap text-on-surface-variant sm:block">
-                            Invoice Studio
+                            Invoice Generator
                         </span>
                     </div>
                 </div>
@@ -217,10 +238,94 @@ const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", share
                         ) : null}
                     </div>
 
+                    <div ref={menuRef} className="relative shrink-0 md:hidden">
+                        <button
+                            type="button"
+                            onClick={() => setMenuOpen((open) => !open)}
+                            aria-haspopup="menu"
+                            aria-expanded={menuOpen}
+                            aria-label="More actions"
+                            className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-sm bg-surface-container-low px-3 py-2 text-xs font-medium whitespace-nowrap text-on-surface-variant select-none transition-colors hover:bg-surface-container focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.98] md:hidden"
+                        >
+                            <Menu size={16} aria-hidden="true" className="shrink-0" />
+                        </button>
+                        {menuOpen ? (
+                            <div
+                                role="menu"
+                                aria-label="More actions"
+                                className="absolute right-0 mt-2 w-52 overflow-hidden rounded-lg border border-line bg-white py-1 text-left shadow-sheet"
+                            >
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => {
+                                        setMenuOpen(false);
+                                        onReset?.();
+                                    }}
+                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                >
+                                    <Repeat2 size={15} aria-hidden="true" className="shrink-0 text-primary" />
+                                    Reset
+                                </button>
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => {
+                                        setMenuOpen(false);
+                                        onPrint?.();
+                                    }}
+                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                >
+                                    <Printer size={15} aria-hidden="true" className="shrink-0 text-primary" />
+                                    Print
+                                </button>
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => {
+                                        void copyText();
+                                    }}
+                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                >
+                                    {copied ? (
+                                        <Check size={15} aria-hidden="true" className="shrink-0 text-tertiary" />
+                                    ) : (
+                                        <Copy size={15} aria-hidden="true" className="shrink-0 text-primary" />
+                                    )}
+                                    {copied ? "Copied!" : "Copy invoice text"}
+                                </button>
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => {
+                                        setMenuOpen(false);
+                                        void nativeShare();
+                                    }}
+                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                >
+                                    <Share2Icon size={15} aria-hidden="true" className="shrink-0 text-primary" />
+                                    Share via…
+                                </button>
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => {
+                                        setMenuOpen(false);
+                                        emailShare();
+                                    }}
+                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                >
+                                    <Mail size={15} aria-hidden="true" className="shrink-0 text-primary" />
+                                    Email invoice
+                                </button>
+                            </div>
+                        ) : null}
+                    </div>
+
                     <button
                         type="button"
                         onClick={onExportPdf}
-                        className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-sm bg-primary px-4 py-2 text-xs font-semibold whitespace-nowrap text-on-primary shadow-sm select-none transition-colors hover:bg-primary-container focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.98]"
+                        className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-sm bg-primary px-4 py-2 text-xs font-semibold whitespace-nowrap text-on-primary shadow-sm select-none transition-colors hover:bg-primary-container focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.98] max-sm:px-3"
                     >
                         <Download size={14} aria-hidden="true" className="shrink-0" />
                         Export

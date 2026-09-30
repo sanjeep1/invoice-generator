@@ -139,7 +139,7 @@ export default function InvoicePreview({
 
     return (
         <aside className="min-h-337.5 rounded-lg p-4 max-lg:min-h-0 max-md:p-2 gap-4 print:min-h-0 print:p-0">
-            <div className="mb-2 px-2 flex items-center justify-between print:hidden">
+            <div className="mb-2 px-2 flex flex-wrap items-center justify-between gap-2 print:hidden">
                 <div className="flex items-center gap-2 font-semibold text-[11px] text-on-surface">
                     <div className="w-2.5 h-2.5 rounded-4xl bg-[#4EDEA3]" />
                     <span>LIVE PREVIEW (A4 STANDARD)</span>
@@ -152,8 +152,8 @@ export default function InvoicePreview({
                 </div>
             </div>
             <div className="flex flex-col mx-auto min-h-262.5 bg-white px-9.5 py-10.5 gap-6 shadow-sheet max-lg:max-w-150 max-md:px-5 max-md:py-7 print:min-h-0 print:shadow-none">
-                <div className="flex items-center justify-between pb-6 gap-1.5 text-primary">
-                    <div className="flex flex-row items-center gap-2">
+                <div className="flex flex-wrap items-center justify-between pb-6 gap-x-1.5 gap-y-3 text-primary">
+                    <div className="flex min-w-0 flex-row items-center gap-2">
                         {details?.senderLogo ? (
                             <Image
                                 src={details.senderLogo}
@@ -163,7 +163,7 @@ export default function InvoicePreview({
                                 className="size-16 shrink-0 object-contain"
                             />
                         ) : null}
-                        <div className="flex flex-col items-start">
+                        <div className="flex min-w-0 flex-col items-start break-words">
                             {sender.name ? (
                                 <p className="text-headline-sm text-on-surface">{sender.name}</p>
                             ) : null}
@@ -185,9 +185,9 @@ export default function InvoicePreview({
                         ) : null}
                     </div>
                 </div>
-                <div className="pb-6 border-b border-line flex justify-between gap-6">
+                <div className="pb-6 border-b border-line flex flex-wrap justify-between gap-x-6 gap-y-4">
                     {hasClient ? (
-                        <div className="flex flex-col gap-1">
+                        <div className="flex min-w-0 flex-col gap-1 break-words">
                             <p className="uppercase text-label-num-sm text-muted">Billed To</p>
                             {client.company ? (
                                 <p className="text-body-md font-semibold text-on-surface">{client.company}</p>
@@ -242,14 +242,14 @@ export default function InvoicePreview({
                             key={i.id}
                             className="grid grid-cols-[minmax(80px,1fr)_34px_62px_73px] gap-1.25 border-b border-line px-2 py-3.25 text-[11px] text-on-surface"
                         >
-                            <p>{i.description}</p>
+                            <p className="min-w-0 break-words">{i.description}</p>
                             <span className="text-right">{i.quantity}</span>
                             <span className="text-right">{money(i.rate)}</span>
                             <b className="text-right">{money(i.quantity * i.rate)}</b>
                         </div>
                     ))}
                 </div>
-                <div className="mt-6.25 ml-auto grid w-60 gap-2.5">
+                <div className="mt-6.25 ml-auto grid w-60 max-w-full gap-2.5">
                     <span className="flex justify-between text-[11px] text-on-surface-variant">
                         Subtotal <b className="text-on-surface">{money(subtotal)}</b>
                     </span>

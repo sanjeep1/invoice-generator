@@ -17,7 +17,7 @@ export default function ClientSelect({
         <label className="flex flex-col gap-1.5 text-xs leading-4 font-medium text-on-surface-variant">
             <span>Saved clients</span>
             <select
-                className="h-9 w-full cursor-pointer rounded-sm border border-line bg-surface-container-lowest px-3 py-2 text-[13px] font-normal text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50"
+                className="h-9 w-full cursor-pointer rounded-sm border border-line bg-surface-container-lowest px-3 py-2 text-[13px] font-normal text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 max-sm:h-10 max-sm:text-base"
                 value={value}
                 defaultValue={value === undefined ? clients[0] : undefined}
                 onChange={(e) => onChange?.(e.target.value)}

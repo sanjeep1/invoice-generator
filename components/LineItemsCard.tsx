@@ -21,15 +21,15 @@ type LineItemsCardProps = {
 };
 
 const rowGrid =
-    "grid grid-cols-[minmax(0,1fr)_72px_110px_120px] max-md:grid-cols-[minmax(0,1fr)_56px_84px_32px] items-center gap-2 px-2.5 py-2";
+    "hidden md:grid md:grid-cols-[minmax(0,1fr)_72px_110px_120px] items-center gap-2 px-2.5 py-2";
 
 const cellInput =
-    "h-9 w-full min-w-0 rounded-sm border border-line bg-white px-3 py-2 text-[13px] text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition placeholder:text-muted/60 hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50";
+    "h-9 w-full min-w-0 rounded-sm border border-line bg-white px-3 py-2 text-[13px] text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition placeholder:text-muted/60 hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 max-sm:h-10 max-sm:px-2 max-sm:text-base";
 
 const configLabel = "flex min-w-0 flex-1 flex-col gap-1.5 text-xs leading-4 font-medium text-on-surface-variant";
 
 const configInput =
-    "h-9 w-full rounded-sm border border-line bg-white px-3 py-2 text-[13px] text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition placeholder:text-muted/60 hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60";
+    "h-9 w-full rounded-sm border border-line bg-white px-3 py-2 text-[13px] text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition placeholder:text-muted/60 hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60 max-sm:h-10 max-sm:text-base";
 
 // Editable line items. Amounts format with the selected currency; numeric
 // inputs arrive as strings and are coerced by the parent updater.
@@ -52,7 +52,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
         }
     };
     return (
-        <section className="flex flex-col rounded-lg bg-white gap-2 p-6 shadow-[0_1px_1px_rgb(0_0_0/0.05)]">
+        <section className="flex flex-col rounded-lg bg-white gap-2 p-6 shadow-[0_1px_1px_rgb(0_0_0/0.05)] max-sm:p-4">
             <div className="pb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <ShoppingCart stroke="var(--primary)" size={18} />
@@ -61,14 +61,14 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                 <span className="py-0.5 px-2 rounded-sm bg-surface-container-low text-on-surface-variant text-[11px] font-medium">{items.length} {items.length === 1 ? "item" : "items"}</span>
             </div>
             <div className={`${rowGrid} bg-surface-container rounded-sm font-mono font-medium text-[11px] tracking-[0.04em] text-muted uppercase`}>
-                <span className="min-w-0 truncate">DESCRIPTION & DELIVERABLES</span>
+                <span className="min-w-0 truncate">Description &amp; deliverables</span>
                 <span className="text-right">Qty. / Hrs</span>
                 <span className="text-right">Rate / Price</span>
-                <span className="text-right max-md:hidden">Amount</span>
+                <span className="text-right">Amount</span>
             </div>
             {items.map((item, index) => (
                 <div
-                    className={`${rowGrid} border-b border-line bg-surface-container-low rounded-sm transition-opacity ${draggedId === item.id ? "opacity-50" : ""} ${dragOverId === item.id && draggedId !== item.id ? "outline-2 outline-primary-fixed-dim" : ""}`}
+                    className={`grid grid-cols-2 gap-2 rounded-sm border border-line bg-surface-container-low p-2.5 transition-opacity md:grid-cols-[minmax(0,1fr)_72px_110px_120px] md:items-center md:px-2.5 md:py-2 ${draggedId === item.id ? "opacity-50" : ""} ${dragOverId === item.id && draggedId !== item.id ? "outline-2 outline-primary-fixed-dim" : ""}`}
                     key={item.id}
                     onDragOver={(e) => {
                         e.preventDefault();
@@ -86,7 +86,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                         setDragOverId((prev) => (prev === item.id ? null : prev));
                     }}
                 >
-                    <div className="flex min-w-0 gap-1.5 items-center">
+                    <div className="col-span-2 flex min-w-0 items-center gap-1.5 md:col-span-1">
                         <span
                             draggable
                             onDragStart={(e) => {
@@ -104,7 +104,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                         >
                             <GripVertical stroke="var(--muted)" size={16} className="pointer-events-none shrink-0" />
                         </span>
-                        <span className="flex shrink-0 flex-col -space-y-1">
+                        <span className="flex shrink-0 flex-col">
                             <button
                                 type="button"
                                 onClick={() => onMove(item.id, "up")}
@@ -125,7 +125,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                             </button>
                         </span>
                         <input
-                            className={`${cellInput} text-left`}
+                            className={`${cellInput} min-w-0 flex-1 text-left`}
                             value={item.description}
                             onChange={(e) => onUpdate(item.id, "description", e.target.value)}
                             placeholder="e.g. Website interface design"
@@ -133,26 +133,32 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                             required
                         />
                     </div>
-                    <input
-                        className={`${cellInput} text-right tabular-nums`}
-                        type="number"
-                        min={0}
-                        value={item.quantity}
-                        onChange={(e) => onUpdate(item.id, "quantity", e.target.value)}
-                        aria-label="Quantity"
-                        required
-                    />
-                    <input
-                        className={`${cellInput} text-right tabular-nums`}
-                        type="number"
-                        min={0}
-                        value={item.rate}
-                        onChange={(e) => onUpdate(item.id, "rate", e.target.value)}
-                        aria-label="Rate"
-                        required
-                    />
-                    <div className="flex min-w-0 items-center justify-end gap-2">
-                        <output className="min-w-0 flex-1 truncate text-right text-xs font-semibold text-on-surface tabular-nums max-md:hidden">
+                    <div className="min-w-0">
+                        <span aria-hidden="true" className="mb-1 block text-[10px] font-medium tracking-[0.04em] text-muted uppercase md:hidden">Qty</span>
+                        <input
+                            className={`${cellInput} text-right tabular-nums`}
+                            type="number"
+                            min={0}
+                            value={item.quantity}
+                            onChange={(e) => onUpdate(item.id, "quantity", e.target.value)}
+                            aria-label="Quantity"
+                            required
+                        />
+                    </div>
+                    <div className="min-w-0">
+                        <span aria-hidden="true" className="mb-1 block text-[10px] font-medium tracking-[0.04em] text-muted uppercase md:hidden">Rate</span>
+                        <input
+                            className={`${cellInput} text-right tabular-nums`}
+                            type="number"
+                            min={0}
+                            value={item.rate}
+                            onChange={(e) => onUpdate(item.id, "rate", e.target.value)}
+                            aria-label="Rate"
+                            required
+                        />
+                    </div>
+                    <div className="col-span-2 flex min-w-0 items-center justify-between gap-2 md:col-span-1 md:justify-end">
+                        <output className="min-w-0 truncate text-xs font-semibold text-on-surface tabular-nums">
                             {money(item.quantity * item.rate)}
                         </output>
                         <button

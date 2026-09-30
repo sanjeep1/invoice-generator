@@ -26,7 +26,7 @@ export default function MetadataCard({ value, onChange }: InvoiceMetaProps) {
                 onChange?.({ [key]: e.target.value });
             };
     return (
-        <section className="rounded-lg bg-white p-6 gap-4 shadow-[0_1px_1px_rgb(0_0_0/0.05)]">
+        <section className="rounded-lg bg-white p-6 gap-4 shadow-[0_1px_1px_rgb(0_0_0/0.05)] max-sm:p-4">
             <div className="mb-4 flex items-center gap-2">
                 <ReceiptText stroke="var(--primary)" />
                 <h2 className="text-headline-sm text-on-surface">Invoice Setup &amp; Numbering</h2>
@@ -58,7 +58,7 @@ export default function MetadataCard({ value, onChange }: InvoiceMetaProps) {
                         </span>
                     </span>
                     <select
-                        className="h-9 w-full cursor-pointer rounded-sm border border-line bg-surface-container-lowest px-3 py-2 text-[13px] font-normal text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50"
+                        className="h-9 w-full cursor-pointer rounded-sm border border-line bg-surface-container-lowest px-3 py-2 text-[13px] font-normal text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 max-sm:h-10 max-sm:text-base"
                         value={details.currency}
                         onChange={handleChange("currency")}
                         required

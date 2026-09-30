@@ -1,6 +1,6 @@
 export default function Footer() {
     return (
-        <footer className="fixed right-0 bottom-0 left-0 z-10 flex h-12 items-center justify-between border-t border-line bg-white px-6 text-[11px] text-muted print:hidden">
+        <footer className="fixed right-0 bottom-0 left-0 z-10 flex h-12 items-center justify-between border-t border-line bg-white px-6 text-[11px] text-muted print:hidden max-sm:h-auto max-sm:min-h-12 max-sm:flex-wrap max-sm:gap-x-3 max-sm:gap-y-0.5 max-sm:px-4 max-sm:py-2">
             <span>© 2026 Invoxa Studio. Built for independent work by <a href="https://sanjeepbanjara.com.np" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                 Sanjeep Banjara
             </a>.</span>

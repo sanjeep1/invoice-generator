@@ -28,7 +28,7 @@ export default function DetailsCard({ icon, title, side, fields, media, value, o
         };
 
     return (
-        <section className="rounded-lg bg-white p-6 pb-7.25 shadow-[0_1px_1px_rgb(0_0_0/0.05)]">
+        <section className="rounded-lg bg-white p-6 pb-7.25 shadow-[0_1px_1px_rgb(0_0_0/0.05)] max-sm:p-4 max-sm:pb-5">
             <div className="mb-4 flex items-center justify-between">
                 <div className="flex gap-2 items-center">
                     {icon}
