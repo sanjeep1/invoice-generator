@@ -64,10 +64,15 @@ export default function InvoicePreview({
         taxId: pick(details?.clientTaxId, SAMPLE_DETAILS.clientTaxId),
     };
     const resolvedNotes = pick(notes, SAMPLE_NOTES);
-    // Line items are user-owned once added; before that, preview sample rows.
+    // Line items are user-owned once they have meaningful content
+    // (a description or a rate > 0); the default qty=1 alone doesn't count.
+    const hasRealItems = useMemo(
+        () => items.some((i) => i.description.trim() || i.rate > 0),
+        [items],
+    );
     const displayItems = useMemo(
-        () => (items.length > 0 ? items : showSample ? SAMPLE_ITEMS : []),
-        [items, showSample],
+        () => (hasRealItems ? items : showSample ? SAMPLE_ITEMS : []),
+        [hasRealItems, items, showSample],
     );
 
     // Shared payment-instructions block: only non-empty bank fields print

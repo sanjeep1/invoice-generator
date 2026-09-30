@@ -10,12 +10,13 @@ type HeaderProps = {
     onExportPdf?: () => void;
     shareSubject?: string;
     shareText?: string;
+    missingFields?: string[];
 };
 
 const ghostButton =
     "bg-surface-container-low shrink-0 cursor-pointer items-center gap-2 rounded-sm px-4 py-2 text-xs font-medium whitespace-nowrap text-on-surface-variant select-none transition-colors hover:bg-surface-container focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.98] hidden md:inline-flex";
 
-const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", shareText = "" }: HeaderProps) => {
+const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", shareText = "", missingFields = [] }: HeaderProps) => {
     const [shareOpen, setShareOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -187,10 +188,13 @@ const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", share
                                 <button
                                     type="button"
                                     role="menuitem"
-                                    onClick={() => {
-                                        void copyText();
-                                    }}
-                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                    onClick={missingFields.length > 0 ? undefined : () => void copyText()}
+                                    disabled={missingFields.length > 0}
+                                    className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium transition-colors ${
+                                        missingFields.length > 0
+                                            ? "text-on-surface/40 cursor-not-allowed"
+                                            : "text-on-surface hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                    }`}
                                 >
                                     {copied ? (
                                         <Check size={15} aria-hidden="true" className="shrink-0 text-tertiary" />
@@ -207,10 +211,13 @@ const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", share
                                 <button
                                     type="button"
                                     role="menuitem"
-                                    onClick={() => {
-                                        void nativeShare();
-                                    }}
-                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                    onClick={missingFields.length > 0 ? undefined : () => void nativeShare()}
+                                    disabled={missingFields.length > 0}
+                                    className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium transition-colors ${
+                                        missingFields.length > 0
+                                            ? "text-on-surface/40 cursor-not-allowed"
+                                            : "text-on-surface hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                    }`}
                                 >
                                     <Share2Icon size={15} aria-hidden="true" className="shrink-0 text-primary" />
                                     <span>
@@ -223,8 +230,13 @@ const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", share
                                 <button
                                     type="button"
                                     role="menuitem"
-                                    onClick={emailShare}
-                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                    onClick={missingFields.length > 0 ? undefined : () => { emailShare(); }}
+                                    disabled={missingFields.length > 0}
+                                    className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium transition-colors ${
+                                        missingFields.length > 0
+                                            ? "text-on-surface/40 cursor-not-allowed"
+                                            : "text-on-surface hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                    }`}
                                 >
                                     <Mail size={15} aria-hidden="true" className="shrink-0 text-primary" />
                                     <span>
@@ -283,9 +295,16 @@ const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", share
                                     type="button"
                                     role="menuitem"
                                     onClick={() => {
+                                        setMenuOpen(false);
+                                        if (missingFields.length > 0) return;
                                         void copyText();
                                     }}
-                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                    disabled={missingFields.length > 0}
+                                    className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium transition-colors ${
+                                        missingFields.length > 0
+                                            ? "text-on-surface/40 cursor-not-allowed"
+                                            : "text-on-surface hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                    }`}
                                 >
                                     {copied ? (
                                         <Check size={15} aria-hidden="true" className="shrink-0 text-tertiary" />
@@ -299,9 +318,15 @@ const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", share
                                     role="menuitem"
                                     onClick={() => {
                                         setMenuOpen(false);
+                                        if (missingFields.length > 0) return;
                                         void nativeShare();
                                     }}
-                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                    disabled={missingFields.length > 0}
+                                    className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium transition-colors ${
+                                        missingFields.length > 0
+                                            ? "text-on-surface/40 cursor-not-allowed"
+                                            : "text-on-surface hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                    }`}
                                 >
                                     <Share2Icon size={15} aria-hidden="true" className="shrink-0 text-primary" />
                                     Share via…
@@ -311,9 +336,15 @@ const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", share
                                     role="menuitem"
                                     onClick={() => {
                                         setMenuOpen(false);
+                                        if (missingFields.length > 0) return;
                                         emailShare();
                                     }}
-                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                    disabled={missingFields.length > 0}
+                                    className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-medium transition-colors ${
+                                        missingFields.length > 0
+                                            ? "text-on-surface/40 cursor-not-allowed"
+                                            : "text-on-surface hover:bg-surface-container-low focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                                    }`}
                                 >
                                     <Mail size={15} aria-hidden="true" className="shrink-0 text-primary" />
                                     Email invoice
@@ -324,8 +355,13 @@ const Header = ({ onReset, onPrint, onExportPdf, shareSubject = "Invoice", share
 
                     <button
                         type="button"
-                        onClick={onExportPdf}
-                        className="inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-sm bg-primary px-4 py-2 text-xs font-semibold whitespace-nowrap text-on-primary shadow-sm select-none transition-colors hover:bg-primary-container focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.98] max-sm:px-3"
+                        onClick={missingFields.length > 0 ? undefined : onExportPdf}
+                        disabled={missingFields.length > 0}
+                        className={`inline-flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-xs font-semibold whitespace-nowrap select-none transition-colors active:scale-[0.98] max-sm:px-3 ${
+                            missingFields.length > 0
+                                ? "bg-primary/50 text-on-primary/50 cursor-not-allowed"
+                                : "bg-primary text-on-primary shadow-sm hover:bg-primary-container focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        }`}
                     >
                         <Download size={14} aria-hidden="true" className="shrink-0" />
                         Export

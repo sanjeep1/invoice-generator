@@ -164,7 +164,8 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                         <button
                             type="button"
                             onClick={() => onRemove(item.id)}
-                            className="flex shrink-0 items-center justify-center rounded-sm p-1 text-muted transition-colors hover:bg-error-container hover:text-error"
+                            disabled={items.length <= 1}
+                            className="flex shrink-0 items-center justify-center rounded-sm p-1 text-muted transition-colors hover:bg-error-container hover:text-error disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted"
                             aria-label="Remove item"
                         >
                             <Trash size={16} />

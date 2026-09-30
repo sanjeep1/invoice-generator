@@ -8,6 +8,7 @@ import InvoicePreview from "@/components/InvoicePreview";
 import UtilityBar from "@/components/UtilityBar";
 import { downloadInvoicePdf } from "@/lib/export-pdf";
 import { buildShareSubject, buildShareText } from "@/lib/share-invoice";
+import { validateInvoice } from "@/lib/validation";
 import type { BankAccountDetails, DiscountConfig, InvoiceDetails, InvoiceItem, InvoiceMeta, TaxConfig } from "@/types/invoice";
 import { SAMPLE_ITEMS } from "@/lib/sample-invoice";
 
@@ -23,7 +24,7 @@ function todayISO(): string {
 export default function Home() {
     // Editor fields start empty so placeholder hints show; the preview
     // falls back to lib/sample-invoice content until the user types.
-    const [items, setItems] = useState<InvoiceItem[]>([{ ...SAMPLE_ITEMS[0] }]);
+    const [items, setItems] = useState<InvoiceItem[]>([{ id: "1", description: "", quantity: 1, rate: 0 }]);
     const [meta, setMeta] = useState<InvoiceMeta>(() => ({
         invoiceNumber: "",
         issueDate: todayISO(),
@@ -208,12 +209,16 @@ export default function Home() {
             showSample: !hasEdited,
         });
 
+    // Required-field gate for export/share. Recomputed each render; cheap.
+    const missingFields = validateInvoice({ items, meta, details, bankDetails });
+
     return (
         <main className="min-w-250 max-lg:min-w-0 print:min-w-0">
             <Header
                 onReset={resetAll}
                 onPrint={handlePrint}
                 onExportPdf={handleExportPdf}
+                missingFields={missingFields}
                 shareSubject={buildShareSubject({ meta, showSample: !hasEdited })}
                 shareText={buildShareText({
                     items,
