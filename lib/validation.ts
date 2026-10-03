@@ -12,6 +12,34 @@ export interface ValidationInput {
     bankDetails: BankAccountDetails;
 }
 
+export interface LineItemErrors {
+    description?: string;
+    quantity?: string;
+    rate?: string;
+}
+
+// Per-row checks shared by validateInvoice (export gate) and the editor's
+// inline errors: description must be non-empty, quantity and rate must be
+// finite numbers greater than 0 (so rate = 0 never passes).
+export function getLineItemErrors(
+    item: InvoiceItem,
+    label = "Line item",
+): LineItemErrors {
+    const errors: LineItemErrors = {};
+    if (!String(item.description ?? "").trim()) {
+        errors.description = `${label} description is required`;
+    }
+    const quantity = Number(item.quantity);
+    if (!Number.isFinite(quantity) || !(quantity > 0)) {
+        errors.quantity = `${label} quantity must be greater than 0`;
+    }
+    const rate = Number(item.rate);
+    if (!Number.isFinite(rate) || !(rate > 0)) {
+        errors.rate = `${label} rate must be greater than 0`;
+    }
+    return errors;
+}
+
 // Mirrors the `required` markers in the editor: invoice setup, sender
 // name/email, client company/email, every line item, and bank routing.
 export function validateInvoice(input: ValidationInput): string[] {
@@ -33,9 +61,10 @@ export function validateInvoice(input: ValidationInput): string[] {
     } else {
         items.forEach((item, index) => {
             const tag = items.length > 1 ? `Item ${index + 1}` : "Line item";
-            if (!item.description.trim()) missing.push(`${tag} description`);
-            if (!(item.quantity > 0)) missing.push(`${tag} quantity`);
-            if (!(item.rate > 0)) missing.push(`${tag} rate`);
+            const errors = getLineItemErrors(item, tag);
+            if (errors.description) missing.push(errors.description);
+            if (errors.quantity) missing.push(errors.quantity);
+            if (errors.rate) missing.push(errors.rate);
         });
     }
 

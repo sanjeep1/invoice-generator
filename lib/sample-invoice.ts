@@ -1,4 +1,4 @@
-import type { InvoiceDetails, InvoiceItem, InvoiceMeta } from "@/types/invoice";
+import type { DiscountConfig, InvoiceDetails, InvoiceItem, InvoiceMeta, TaxConfig } from "@/types/invoice";
 
 // Sample content shown in the live preview (and as editor placeholders)
 // while the corresponding form fields are still empty. Once the user types
@@ -33,3 +33,22 @@ export const SAMPLE_ITEMS: InvoiceItem[] = [
 
 export const SAMPLE_NOTES =
     "Thank you for the opportunity to collaborate. Payment is due within 15 days of the invoice date.";
+
+// Sample discount/tax shown in the preview/PDF/share text before the user
+// enables the real controls. Matches the editor's default 10% / VAT 13%.
+export const SAMPLE_DISCOUNT: DiscountConfig = {
+    enabled: true,
+    type: "percentage",
+    value: 10,
+    reason: "",
+};
+
+export const SAMPLE_TAX: TaxConfig = {
+    enabled: true,
+    type: "VAT",
+    rate: 13,
+};
+
+// Sample brand mark shown on the preview letterhead before the user uploads
+// a logo. Points at public/brandlogo.svg; preview-only (PDF can't embed SVG).
+export const SAMPLE_LOGO = "/brandlogo.svg";

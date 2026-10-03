@@ -1,6 +1,6 @@
 import { computeTotals, parseCurrencyCode } from "@/lib/invoice-totals";
 import { formatDueDate, formatPaperDate } from "@/lib/invoice-dates";
-import { SAMPLE_DETAILS, SAMPLE_ITEMS, SAMPLE_META, SAMPLE_NOTES } from "@/lib/sample-invoice";
+import { SAMPLE_DETAILS, SAMPLE_DISCOUNT, SAMPLE_ITEMS, SAMPLE_META, SAMPLE_NOTES, SAMPLE_TAX } from "@/lib/sample-invoice";
 import { formatCurrency, numberToWords } from "@/lib/utils";
 import type {
     BankAccountDetails,
@@ -41,10 +41,12 @@ export function buildShareText(input: ShareInput): string {
         }
     };
     const displayItems = items.length > 0 ? items : showSample ? SAMPLE_ITEMS : [];
+    const resolvedDiscount = discount?.enabled ? discount : showSample ? SAMPLE_DISCOUNT : undefined;
+    const resolvedTax = tax?.enabled ? tax : showSample ? SAMPLE_TAX : undefined;
     const { subtotal, discountAmount, taxAmount, total } = computeTotals(
         displayItems,
-        discount,
-        tax,
+        resolvedDiscount,
+        resolvedTax,
     );
 
     const lines: string[] = [];
@@ -72,12 +74,12 @@ export function buildShareText(input: ShareInput): string {
     }
     lines.push("");
     lines.push(`Subtotal: ${money(subtotal)}`);
-    if (discount?.enabled) {
-        const label = `Discount${discount.type === "percentage" ? ` (${discount.value}%)` : ""}${discount.reason.trim() ? ` · ${discount.reason.trim()}` : ""}`;
+    if (resolvedDiscount) {
+        const label = `Discount${resolvedDiscount.type === "percentage" ? ` (${resolvedDiscount.value}%)` : ""}${resolvedDiscount.reason.trim() ? ` · ${resolvedDiscount.reason.trim()}` : ""}`;
         lines.push(`${label}: -${money(discountAmount)}`);
     }
-    if (tax?.enabled) {
-        lines.push(`${tax.type} (${tax.rate}%): ${money(taxAmount)}`);
+    if (resolvedTax) {
+        lines.push(`${resolvedTax.type} (${resolvedTax.rate}%): ${money(taxAmount)}`);
     }
     lines.push(`Total due: ${money(total)}`);
     lines.push(`Amount in words: ${numberToWords(total, currencyCode)}`);

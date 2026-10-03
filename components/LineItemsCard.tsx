@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getCurrencySymbol } from "@/lib/currencies";
 import { formatCurrency } from "@/lib/utils";
+import { getLineItemErrors } from "@/lib/validation";
 import type { DiscountConfig, InvoiceItem, TaxConfig, TaxType } from "@/types/invoice";
 import { ChevronDown, ChevronUp, GripVertical, PlusCircleIcon, ShoppingCart, SquareText, Tag, Trash } from "lucide-react";
 
@@ -26,6 +27,9 @@ const rowGrid =
 const cellInput =
     "h-9 w-full min-w-0 rounded-sm border border-line bg-white px-3 py-2 text-[13px] text-on-surface shadow-[inset_0_1px_2px_rgb(15_23_42/0.05)] outline-none transition placeholder:text-muted/60 hover:border-divider focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 max-sm:h-10 max-sm:px-2 max-sm:text-base";
 
+// Red ring for inputs failing the export gate (empty description, qty/rate ≤ 0).
+const cellInputError = "border-error focus:border-error focus:ring-error/40";
+
 const configLabel = "flex min-w-0 flex-1 flex-col gap-1.5 text-xs leading-4 font-medium text-on-surface-variant";
 
 const configInput =
@@ -37,6 +41,25 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
 
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
+    // Tracks which fields the user has touched so inline errors never show
+    // on pristine rows (e.g. the empty starter row before typing anything).
+    const [touched, setTouched] = useState<Record<string, Partial<Record<ItemField, boolean>>>>({});
+
+    const markTouched = (id: string, key: ItemField) => {
+        setTouched((prev) =>
+            prev[id]?.[key] ? prev : { ...prev, [id]: { ...prev[id], [key]: true } },
+        );
+    };
+
+    const handleRemove = (id: string) => {
+        setTouched((prev) => {
+            if (!prev[id]) return prev;
+            const next = { ...prev };
+            delete next[id];
+            return next;
+        });
+        onRemove(id);
+    };
 
     const { enabled: applyDiscount, type: discountType } = discount;
     const { enabled: applyTax } = tax;
@@ -66,9 +89,19 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                 <span className="text-right">Rate / Price</span>
                 <span className="text-right">Amount</span>
             </div>
-            {items.map((item, index) => (
+            {items.map((item, index) => {
+                const errors = getLineItemErrors(item, `Item ${index + 1}`);
+                // Only surface errors for fields the user has touched, so the
+                // untouched starter row renders clean on first load.
+                const shown = {
+                    description: touched[item.id]?.description ? errors.description : undefined,
+                    quantity: touched[item.id]?.quantity ? errors.quantity : undefined,
+                    rate: touched[item.id]?.rate ? errors.rate : undefined,
+                };
+                const hasRowError = Boolean(shown.description || shown.quantity || shown.rate);
+                return (
                 <div
-                    className={`grid grid-cols-2 gap-2 rounded-sm border border-line bg-surface-container-low p-2.5 transition-opacity md:grid-cols-[minmax(0,1fr)_72px_110px_120px] md:items-center md:px-2.5 md:py-2 ${draggedId === item.id ? "opacity-50" : ""} ${dragOverId === item.id && draggedId !== item.id ? "outline-2 outline-primary-fixed-dim" : ""}`}
+                    className={`grid grid-cols-2 gap-2 rounded-sm border bg-surface-container-low p-2.5 transition-opacity md:grid-cols-[minmax(0,1fr)_72px_110px_120px] md:items-start md:px-2.5 md:py-2 ${hasRowError ? "border-error/60" : "border-line"} ${draggedId === item.id ? "opacity-50" : ""} ${dragOverId === item.id && draggedId !== item.id ? "outline-2 outline-primary-fixed-dim" : ""}`}
                     key={item.id}
                     onDragOver={(e) => {
                         e.preventDefault();
@@ -86,7 +119,7 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                         setDragOverId((prev) => (prev === item.id ? null : prev));
                     }}
                 >
-                    <div className="col-span-2 flex min-w-0 items-center gap-1.5 md:col-span-1">
+                    <div className="col-span-2 flex min-w-0 items-start gap-1.5 md:col-span-1">
                         <span
                             draggable
                             onDragStart={(e) => {
@@ -98,13 +131,13 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                                 setDraggedId(null);
                                 setDragOverId(null);
                             }}
-                            className="flex shrink-0 cursor-grab touch-none items-center rounded-sm p-0.5 select-none active:cursor-grabbing"
+                            className="flex shrink-0 cursor-grab touch-none items-center rounded-sm p-0.5 pt-2.5 select-none active:cursor-grabbing"
                             title="Drag to reorder"
                             aria-label={`Drag to reorder ${item.description || "item"}`}
                         >
                             <GripVertical stroke="var(--muted)" size={16} className="pointer-events-none shrink-0" />
                         </span>
-                        <span className="flex shrink-0 flex-col">
+                        <span className="flex shrink-0 flex-col pt-1">
                             <button
                                 type="button"
                                 onClick={() => onMove(item.id, "up")}
@@ -124,46 +157,86 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                                 <ChevronDown stroke="currentColor" size={14} />
                             </button>
                         </span>
-                        <input
-                            className={`${cellInput} min-w-0 flex-1 text-left`}
-                            value={item.description}
-                            onChange={(e) => onUpdate(item.id, "description", e.target.value)}
-                            placeholder="e.g. Website interface design"
-                            aria-label="Item description"
-                            required
-                        />
+                        <span className="min-w-0 flex-1">
+                            <input
+                                className={`${cellInput} min-w-0 flex-1 text-left ${shown.description ? cellInputError : ""}`}
+                                value={item.description}
+                                onChange={(e) => {
+                                    markTouched(item.id, "description");
+                                    onUpdate(item.id, "description", e.target.value);
+                                }}
+                                onBlur={() => markTouched(item.id, "description")}
+                                placeholder="e.g. Website interface design"
+                                aria-label={`Item ${index + 1} description`}
+                                aria-invalid={Boolean(shown.description)}
+                                required
+                            />
+                            <p
+                                role={shown.description ? "alert" : undefined}
+                                aria-hidden={shown.description ? undefined : true}
+                                className="mt-1 min-h-4 text-[11px] leading-4 text-error"
+                            >
+                                {shown.description ? "Description is required" : ""}
+                            </p>
+                        </span>
                     </div>
                     <div className="min-w-0">
                         <span aria-hidden="true" className="mb-1 block text-[10px] font-medium tracking-[0.04em] text-muted uppercase md:hidden">Qty</span>
                         <input
-                            className={`${cellInput} text-right tabular-nums`}
+                            className={`${cellInput} text-right tabular-nums ${shown.quantity ? cellInputError : ""}`}
                             type="number"
                             min={0}
+                            step="any"
                             value={item.quantity}
-                            onChange={(e) => onUpdate(item.id, "quantity", e.target.value)}
-                            aria-label="Quantity"
+                            onChange={(e) => {
+                                markTouched(item.id, "quantity");
+                                onUpdate(item.id, "quantity", e.target.value);
+                            }}
+                            onBlur={() => markTouched(item.id, "quantity")}
+                            aria-label={`Item ${index + 1} quantity`}
+                            aria-invalid={Boolean(shown.quantity)}
                             required
                         />
+                        <p
+                            role={shown.quantity ? "alert" : undefined}
+                            aria-hidden={shown.quantity ? undefined : true}
+                            className="mt-1 min-h-4 text-[11px] leading-4 text-error"
+                        >
+                            {shown.quantity ? "Must be greater than 0" : ""}
+                        </p>
                     </div>
                     <div className="min-w-0">
                         <span aria-hidden="true" className="mb-1 block text-[10px] font-medium tracking-[0.04em] text-muted uppercase md:hidden">Rate</span>
                         <input
-                            className={`${cellInput} text-right tabular-nums`}
+                            className={`${cellInput} text-right tabular-nums ${shown.rate ? cellInputError : ""}`}
                             type="number"
                             min={0}
+                            step="any"
                             value={item.rate}
-                            onChange={(e) => onUpdate(item.id, "rate", e.target.value)}
-                            aria-label="Rate"
+                            onChange={(e) => {
+                                markTouched(item.id, "rate");
+                                onUpdate(item.id, "rate", e.target.value);
+                            }}
+                            onBlur={() => markTouched(item.id, "rate")}
+                            aria-label={`Item ${index + 1} rate`}
+                            aria-invalid={Boolean(shown.rate)}
                             required
                         />
+                        <p
+                            role={shown.rate ? "alert" : undefined}
+                            aria-hidden={shown.rate ? undefined : true}
+                            className="mt-1 min-h-4 text-[11px] leading-4 text-error"
+                        >
+                            {shown.rate ? "Must be greater than 0" : ""}
+                        </p>
                     </div>
-                    <div className="col-span-2 flex min-w-0 items-center justify-between gap-2 md:col-span-1 md:justify-end">
+                    <div className="col-span-2 flex min-w-0 items-center justify-between gap-2 md:col-span-1 md:justify-end md:pt-2">
                         <output className="min-w-0 truncate text-xs font-semibold text-on-surface tabular-nums">
                             {money(item.quantity * item.rate)}
                         </output>
                         <button
                             type="button"
-                            onClick={() => onRemove(item.id)}
+                            onClick={() => handleRemove(item.id)}
                             disabled={items.length <= 1}
                             className="flex shrink-0 items-center justify-center rounded-sm p-1 text-muted transition-colors hover:bg-error-container hover:text-error disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted"
                             aria-label="Remove item"
@@ -172,7 +245,8 @@ export default function LineItemsCard({ items, onAdd, onUpdate, onRemove, onMove
                         </button>
                     </div>
                 </div>
-            ))}
+                );
+            })}
             <div className="flex flex-col pt-5 gap-4 border-t border-line">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center rounded-sm bg-surface-container gap-1 px-4 py-2 text-xs font-medium text-primary transition-colors hover:bg-surface-container-low cursor-pointer"

@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { computeTotals, parseCurrencyCode } from "@/lib/invoice-totals";
 import { formatDueDate, formatPaperDate } from "@/lib/invoice-dates";
-import { SAMPLE_DETAILS, SAMPLE_ITEMS, SAMPLE_META, SAMPLE_NOTES } from "@/lib/sample-invoice";
+import { SAMPLE_DETAILS, SAMPLE_DISCOUNT, SAMPLE_ITEMS, SAMPLE_META, SAMPLE_NOTES, SAMPLE_TAX } from "@/lib/sample-invoice";
 import { formatCurrency, numberToWords } from "@/lib/utils";
 import type {
     BankAccountDetails,
@@ -60,10 +60,12 @@ export function buildInvoicePdf(input: PdfExportInput): { doc: jsPDF; filename: 
         }
     };
     const displayItems = items.length > 0 ? items : showSample ? SAMPLE_ITEMS : [];
+    const resolvedDiscount = discount?.enabled ? discount : showSample ? SAMPLE_DISCOUNT : undefined;
+    const resolvedTax = tax?.enabled ? tax : showSample ? SAMPLE_TAX : undefined;
     const { subtotal, discountAmount, taxAmount, total } = computeTotals(
         displayItems,
-        discount,
-        tax,
+        resolvedDiscount,
+        resolvedTax,
     );
 
     const sender = {
@@ -257,7 +259,7 @@ export function buildInvoicePdf(input: PdfExportInput): { doc: jsPDF; filename: 
 
     // Keep the totals block together: if it won't fit below the table,
     // continue on a fresh page instead of clipping off the sheet.
-    const totalsRows = 1 + (discount?.enabled ? 1 : 0) + (tax?.enabled ? 1 : 0);
+    const totalsRows = 1 + (resolvedDiscount ? 1 : 0) + (resolvedTax ? 1 : 0);
     const totalsH = totalsRows * 5.5 + 6 + 7;
     if (y + totalsH + 12 > pageHeight - margin) {
         doc.addPage();
@@ -278,12 +280,12 @@ export function buildInvoicePdf(input: PdfExportInput): { doc: jsPDF; filename: 
         y += 5.5;
     };
     totalsRow("Subtotal", money(subtotal));
-    if (discount?.enabled) {
-        const label = `Discount${discount.type === "percentage" ? ` (${discount.value}%)` : ""}${discount.reason.trim() ? ` \u00B7 ${discount.reason.trim()}` : ""}`;
+    if (resolvedDiscount) {
+        const label = `Discount${resolvedDiscount.type === "percentage" ? ` (${resolvedDiscount.value}%)` : ""}${resolvedDiscount.reason.trim() ? ` \u00B7 ${resolvedDiscount.reason.trim()}` : ""}`;
         totalsRow(label, `-${money(discountAmount)}`);
     }
-    if (tax?.enabled) {
-        totalsRow(`${tax.type} (${tax.rate}%)`, money(taxAmount));
+    if (resolvedTax) {
+        totalsRow(`${resolvedTax.type} (${resolvedTax.rate}%)`, money(taxAmount));
     }
     doc.setDrawColor(...INK);
     doc.setLineWidth(0.4);
