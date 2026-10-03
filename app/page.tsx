@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import InvoicePreview from "@/components/InvoicePreview";
 import UtilityBar from "@/components/UtilityBar";
+import { Eye, Pencil } from "lucide-react";
 import { downloadInvoicePdf, type PdfExportInput } from "@/lib/export-pdf";
 import { buildShareSubject } from "@/lib/share-invoice";
 import { validateInvoice } from "@/lib/validation";
@@ -215,6 +216,16 @@ export default function Home() {
     // Required-field gate for export/share. Recomputed each render; cheap.
     const missingFields = validateInvoice({ items, meta, details, bankDetails });
 
+    // Small screens show Edit / Preview as tabs instead of the side-by-side
+    // desktop grid. Desktop (lg+) always renders both columns.
+    const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
+    const tabButton = (active: boolean) =>
+        `flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-sm px-4 py-2 text-xs font-semibold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+            active
+                ? "bg-white text-on-surface shadow-sm"
+                : "text-on-surface-variant hover:text-on-surface"
+        }`;
+
     return (
         <main className="min-w-250 max-lg:min-w-0 print:min-w-0">
             <Header
@@ -226,37 +237,67 @@ export default function Home() {
                 shareSubject={buildShareSubject({ meta, showSample: !hasEdited })}
             />
             <UtilityBar />
+            <div
+                role="tablist"
+                aria-label="Editor and preview"
+                className="sticky top-16 z-20 mx-4 mt-4 flex gap-1 rounded-md border border-line bg-surface-container-low p-1 lg:hidden print:hidden"
+            >
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mobileTab === "edit"}
+                    onClick={() => setMobileTab("edit")}
+                    className={tabButton(mobileTab === "edit")}
+                >
+                    <Pencil size={14} aria-hidden="true" className="shrink-0" />
+                    Edit
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mobileTab === "preview"}
+                    onClick={() => setMobileTab("preview")}
+                    className={tabButton(mobileTab === "preview")}
+                >
+                    <Eye size={14} aria-hidden="true" className="shrink-0" />
+                    Preview
+                </button>
+            </div>
             <div className="mx-auto mt-6 grid max-w-308 grid-cols-[708px_minmax(0,1fr)] gap-6 pb-32.5 max-lg:m-4 max-lg:grid-cols-1 max-lg:px-4 max-lg:pb-32.5 print:m-0 print:max-w-none print:grid-cols-1 print:gap-0 print:px-0 print:pb-0">
-                <EditorPanel
-                    items={items}
-                    onAddItem={addItem}
-                    onUpdateItem={updateItem}
-                    onRemoveItem={removeItem}
-                    onMoveItem={moveItem}
-                    onReorderItem={reorderItem}
-                    meta={meta}
-                    onMetaChange={updateMeta}
-                    details={details}
-                    onDetailsChange={updateDetails}
-                    notes={notes}
-                    onNotesChange={updateNotes}
-                    bankDetails={bankDetails}
-                    onBankDetailsChange={updateBankDetails}
-                    discount={discount}
-                    onDiscountChange={updateDiscount}
-                    tax={tax}
-                    onTaxChange={updateTax}
-                />
-                <InvoicePreview
-                    items={items}
-                    meta={meta}
-                    details={details}
-                    notes={notes}
-                    bankDetails={bankDetails}
-                    showSample={!hasEdited}
-                    discount={discount}
-                    tax={tax}
-                />
+                <div className={`min-w-0 ${mobileTab === "edit" ? "" : "max-lg:hidden"} print:block`}>
+                    <EditorPanel
+                        items={items}
+                        onAddItem={addItem}
+                        onUpdateItem={updateItem}
+                        onRemoveItem={removeItem}
+                        onMoveItem={moveItem}
+                        onReorderItem={reorderItem}
+                        meta={meta}
+                        onMetaChange={updateMeta}
+                        details={details}
+                        onDetailsChange={updateDetails}
+                        notes={notes}
+                        onNotesChange={updateNotes}
+                        bankDetails={bankDetails}
+                        onBankDetailsChange={updateBankDetails}
+                        discount={discount}
+                        onDiscountChange={updateDiscount}
+                        tax={tax}
+                        onTaxChange={updateTax}
+                    />
+                </div>
+                <div className={`min-w-0 ${mobileTab === "preview" ? "" : "max-lg:hidden"} print:block`}>
+                    <InvoicePreview
+                        items={items}
+                        meta={meta}
+                        details={details}
+                        notes={notes}
+                        bankDetails={bankDetails}
+                        showSample={!hasEdited}
+                        discount={discount}
+                        tax={tax}
+                    />
+                </div>
             </div>
             {/* <ExportDrawer /> */}
             <Footer />

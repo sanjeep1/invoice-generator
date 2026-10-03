@@ -93,34 +93,38 @@ export function buildInvoicePdf(input: PdfExportInput): { doc: jsPDF; filename: 
     const right = pageWidth - margin;
     let y = 16;
 
-    // Sender block (logo + name/business/email/country).
+    // Sender block (logo card + business title / name / email / country),
+    // mirroring the preview letterhead hierarchy.
     let textX = margin;
     const logoFormat = details.senderLogo ? imageFormat(details.senderLogo) : null;
     if (logoFormat) {
         try {
-            doc.addImage(details.senderLogo, logoFormat, margin, y - 4, 14, 14);
-            textX = margin + 18;
+            doc.setDrawColor(...LINE);
+            doc.setLineWidth(0.3);
+            doc.roundedRect(margin, y - 5, 17, 17, 2, 2, "D");
+            doc.addImage(details.senderLogo, logoFormat, margin + 1.75, y - 3.25, 13.5, 13.5);
+            textX = margin + 21;
         } catch {
             textX = margin;
         }
     }
-    if (sender.name) {
+    if (sender.business) {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(14);
         doc.setTextColor(...INK);
-        doc.text(sender.name, textX, y);
+        doc.text(sender.business, textX, y);
         y += 6;
     }
-    if (sender.business) {
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.setTextColor(...INK);
-        doc.text(sender.business, textX, y);
-        y += 5.5;
+    if (sender.name) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(...VARIANT);
+        doc.text(sender.name, textX, y);
+        y += 5;
     }
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...VARIANT);
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
     if (sender.email) {
         doc.text(sender.email, textX, y);
         y += 4.5;
@@ -287,16 +291,22 @@ export function buildInvoicePdf(input: PdfExportInput): { doc: jsPDF; filename: 
     if (resolvedTax) {
         totalsRow(`${resolvedTax.type} (${resolvedTax.rate}%)`, money(taxAmount));
     }
-    doc.setDrawColor(...INK);
-    doc.setLineWidth(0.4);
-    doc.line(right - 72, y, right, y);
-    y += 6;
+    // Total-due band, mirroring the preview's highlighted totals row.
+    const totalBandH = 10;
+    if (y + totalBandH > pageHeight - margin) {
+        doc.addPage();
+        y = 16;
+    }
+    doc.setFillColor(...BAND);
+    doc.roundedRect(right - 76, y, 76, totalBandH, 1.5, 1.5, "F");
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11.5);
-    doc.setTextColor(...INK);
-    doc.text("Total due", labelAnchor, y, { align: "right" });
-    doc.text(money(total), right, y, { align: "right" });
-    y += 7;
+    doc.setFontSize(10);
+    doc.setTextColor(...VARIANT);
+    doc.text("Total due", labelAnchor, y + 6.5, { align: "right" });
+    doc.setFontSize(12);
+    doc.setTextColor(...PRIMARY);
+    doc.text(money(total), right - 2, y + 6.5, { align: "right" });
+    y += totalBandH + 7;
 
     // Amount-in-words band.
     const words = `AMOUNT IN WORDS:  ${numberToWords(total, currencyCode)}`;
@@ -314,66 +324,122 @@ export function buildInvoicePdf(input: PdfExportInput): { doc: jsPDF; filename: 
     doc.text(wrappedWords, margin + 3, y + 5);
     y += wordsH + 7;
 
-    // Payment box: measure content first, paint the band, then draw text
-    // over it (fills would otherwise cover already-drawn content).
+    // Payment card mirroring the preview footer: header strip, label/value
+    // grid, QR card with caption, and a separated tax/notes strip. Content is
+    // measured first so the band is painted before text goes over it.
     const qrFormat = bankDetails.qrImage ? imageFormat(bankDetails.qrImage) : null;
-    const boxInnerW = right - margin - 8;
-    const textW = qrFormat ? boxInnerW - 28 : boxInnerW;
-    doc.setFontSize(9);
-    const bankLines = [
-        bankDetails.accountHolder && `Account Holder: ${bankDetails.accountHolder}`,
-        bankDetails.bankAndBranch && `Bank Name & Branch: ${bankDetails.bankAndBranch}`,
-        bankDetails.accountNumber && `Account Number: ${bankDetails.accountNumber}`,
-        bankDetails.swiftCode && `SWIFT: ${bankDetails.swiftCode}`,
-        bankDetails.paymentReference && `Reference: ${bankDetails.paymentReference}`,
-    ].filter(Boolean) as string[];
-    const payLines =
-        bankLines.length > 0 ? bankLines : ["Account Number: 0037000012345678", "SWIFT: COBADEFFXXX"];
-    const wrappedPay: string[] = payLines.flatMap(
-        (line) => doc.splitTextToSize(line, textW) as string[],
+    const qrCard = qrFormat ? 30 : 0;
+    const gridW = right - margin - 8 - (qrFormat ? qrCard + 4 : 0);
+    const colW = (gridW - 4) / 2;
+    const bankRows = (
+        [
+            bankDetails.accountHolder && { label: "ACCOUNT HOLDER", value: bankDetails.accountHolder },
+            bankDetails.bankAndBranch && { label: "BANK & BRANCH", value: bankDetails.bankAndBranch },
+            bankDetails.accountNumber && { label: "ACCOUNT NUMBER", value: bankDetails.accountNumber },
+            bankDetails.swiftCode && { label: "SWIFT / BIC", value: bankDetails.swiftCode },
+            bankDetails.paymentReference && { label: "REFERENCE", value: bankDetails.paymentReference },
+        ].filter(Boolean) as { label: string; value: string }[]
     );
+    const payRows =
+        bankRows.length > 0
+            ? bankRows
+            : [
+                  { label: "ACCOUNT NUMBER", value: "0037000012345678" },
+                  { label: "SWIFT / BIC", value: "COBADEFFXXX" },
+              ];
+    doc.setFontSize(9);
+    const cellLines = payRows.map((row) => ({
+        label: row.label,
+        lines: doc.splitTextToSize(row.value, colW - 1) as string[],
+    }));
+    let gridH = 0;
+    for (let r = 0; r < cellLines.length; r += 2) {
+        const left = cellLines[r]?.lines.length ?? 0;
+        const rightCell = cellLines[r + 1]?.lines.length ?? 0;
+        gridH += 3 + Math.max(left, rightCell, 1) * 4 + 2.5;
+    }
     doc.setFontSize(8.5);
     const wrappedNotes: string[] = resolvedNotes
-        ? (doc.splitTextToSize(resolvedNotes, textW) as string[])
+        ? (doc.splitTextToSize(resolvedNotes, right - margin - 8) as string[])
         : [];
-    let boxH = 7 + 5.5 + wrappedPay.length * 4.5 + 4;
-    if (sender.taxID) boxH += 2 + 5;
-    if (wrappedNotes.length > 0) boxH += wrappedNotes.length * 4.5;
-    if (qrFormat) boxH = Math.max(boxH, 7 + 24 + 4);
-    if (y + boxH > pageHeight - margin) {
+    const footH =
+        (sender.taxID ? 5 : 0) + wrappedNotes.length * 4.5 + (sender.taxID || wrappedNotes.length > 0 ? 4 : 0);
+    const boxH = 7 + 5.5 + 1 + 3.5 + gridH + 2 + footH + 4;
+    const boxNeededH = qrFormat ? Math.max(boxH, 7 + 5.5 + 1 + 3.5 + qrCard + 6 + 4) : boxH;
+    if (y + boxNeededH > pageHeight - margin) {
         doc.addPage();
         y = 16;
     }
     doc.setFillColor(...BAND);
-    doc.roundedRect(margin, y, right - margin, boxH, 1.5, 1.5, "F");
+    doc.roundedRect(margin, y, right - margin, boxNeededH, 1.5, 1.5, "F");
 
     let boxY = y + 7;
+    doc.setFillColor(...PRIMARY);
+    doc.rect(margin + 4, boxY - 3.2, 2.2, 2.2, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
     doc.setTextColor(...INK);
-    doc.text("Payment Instructions", margin + 4, boxY);
+    doc.text("Payment Instructions", margin + 8, boxY);
     boxY += 5.5;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...VARIANT);
-    doc.text(wrappedPay, margin + 4, boxY);
-    boxY += wrappedPay.length * 4.5;
-    if (sender.taxID) {
-        boxY += 2;
-        doc.setFontSize(8.5);
-        doc.text(`Tax / PAN ID: ${sender.taxID}`, margin + 4, boxY);
-        boxY += 5;
-    }
-    if (wrappedNotes.length > 0) {
-        doc.setFontSize(8.5);
-        doc.setTextColor(...MUTED);
-        doc.text(wrappedNotes, margin + 4, boxY);
+    doc.setDrawColor(...LINE);
+    doc.setLineWidth(0.3);
+    doc.line(margin + 4, boxY, right - 4, boxY);
+    boxY += 3.5;
+
+    const gridX = margin + 4;
+    let cellY = boxY;
+    for (let r = 0; r < cellLines.length; r += 2) {
+        const pair = [cellLines[r], cellLines[r + 1]].filter(Boolean);
+        const rowH = 3 + Math.max(...pair.map((c) => c.lines.length), 1) * 4 + 2.5;
+        pair.forEach((cell, c) => {
+            const cx = gridX + c * (colW + 4);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(7.5);
+            doc.setTextColor(...MUTED);
+            doc.text(cell.label, cx, cellY + 3);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(...INK);
+            doc.text(cell.lines, cx, cellY + 7);
+        });
+        cellY += rowH;
     }
     if (qrFormat) {
+        const qrX = right - 4 - qrCard;
+        const qrY = boxY;
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(...LINE);
+        doc.roundedRect(qrX, qrY, qrCard, qrCard, 1.5, 1.5, "FD");
         try {
-            doc.addImage(bankDetails.qrImage, qrFormat, right - 4 - 24, y + 7, 24, 24);
+            doc.addImage(bankDetails.qrImage, qrFormat, qrX + 2, qrY + 2, qrCard - 4, qrCard - 8);
         } catch {
             // Skip unloadable QR artwork; the payment lines still print.
+        }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7);
+        doc.setTextColor(...MUTED);
+        doc.text("SCAN TO PAY", qrX + qrCard / 2, qrY + qrCard - 1.5, { align: "center" });
+    }
+    boxY = Math.max(cellY + 2, boxY + (qrFormat ? qrCard + 6 : 0));
+    if (sender.taxID || wrappedNotes.length > 0) {
+        doc.setDrawColor(...LINE);
+        doc.line(margin + 4, boxY, right - 4, boxY);
+        boxY += 4;
+        if (sender.taxID) {
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.setTextColor(...MUTED);
+            doc.text("TAX / PAN ID:  ", margin + 4, boxY);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(...INK);
+            doc.text(sender.taxID, margin + 4 + doc.getTextWidth("TAX / PAN ID:  "), boxY);
+            boxY += 5;
+        }
+        if (wrappedNotes.length > 0) {
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8.5);
+            doc.setTextColor(...MUTED);
+            doc.text(wrappedNotes, margin + 4, boxY);
         }
     }
 
