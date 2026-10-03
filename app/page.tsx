@@ -6,8 +6,8 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import InvoicePreview from "@/components/InvoicePreview";
 import UtilityBar from "@/components/UtilityBar";
-import { downloadInvoicePdf } from "@/lib/export-pdf";
-import { buildShareSubject, buildShareText } from "@/lib/share-invoice";
+import { downloadInvoicePdf, type PdfExportInput } from "@/lib/export-pdf";
+import { buildShareSubject } from "@/lib/share-invoice";
 import { validateInvoice } from "@/lib/validation";
 import type { BankAccountDetails, DiscountConfig, InvoiceDetails, InvoiceItem, InvoiceMeta, TaxConfig } from "@/types/invoice";
 import { SAMPLE_ITEMS } from "@/lib/sample-invoice";
@@ -196,18 +196,21 @@ export default function Home() {
     // Print CSS (see globals.css) isolates the invoice sheet on paper.
     const handlePrint = () => window.print();
 
+    // One resolved snapshot of the invoice, shared by the PDF export and the
+    // share actions (the PDF is now what gets shared, not the text summary).
+    const invoice: PdfExportInput = {
+        items,
+        meta,
+        details,
+        notes,
+        bankDetails,
+        discount,
+        tax,
+        showSample: !hasEdited,
+    };
+
     // Direct vector-PDF download — no print dialog.
-    const handleExportPdf = () =>
-        downloadInvoicePdf({
-            items,
-            meta,
-            details,
-            notes,
-            bankDetails,
-            discount,
-            tax,
-            showSample: !hasEdited,
-        });
+    const handleExportPdf = () => downloadInvoicePdf(invoice);
 
     // Required-field gate for export/share. Recomputed each render; cheap.
     const missingFields = validateInvoice({ items, meta, details, bankDetails });
@@ -219,17 +222,8 @@ export default function Home() {
                 onPrint={handlePrint}
                 onExportPdf={handleExportPdf}
                 missingFields={missingFields}
+                invoice={invoice}
                 shareSubject={buildShareSubject({ meta, showSample: !hasEdited })}
-                shareText={buildShareText({
-                    items,
-                    meta,
-                    details,
-                    notes,
-                    bankDetails,
-                    discount,
-                    tax,
-                    showSample: !hasEdited,
-                })}
             />
             <UtilityBar />
             <div className="mx-auto mt-6 grid max-w-308 grid-cols-[708px_minmax(0,1fr)] gap-6 pb-32.5 max-lg:m-4 max-lg:grid-cols-1 max-lg:px-4 max-lg:pb-32.5 print:m-0 print:max-w-none print:grid-cols-1 print:gap-0 print:px-0 print:pb-0">
