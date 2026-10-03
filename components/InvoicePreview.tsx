@@ -168,7 +168,7 @@ export default function InvoicePreview({
                                 className="size-16 shrink-0 object-contain"
                             />
                         ) : null}
-                        <div className="flex min-w-0 flex-col items-start break-words">
+                        <div className="flex min-w-0 flex-col items-start wrap-break-words">
                             {sender.name ? (
                                 <p className="text-headline-sm text-on-surface">{sender.name}</p>
                             ) : null}
@@ -192,7 +192,7 @@ export default function InvoicePreview({
                 </div>
                 <div className="pb-6 border-b border-line flex flex-wrap justify-between gap-x-6 gap-y-4">
                     {hasClient ? (
-                        <div className="flex min-w-0 flex-col gap-1 break-words">
+                        <div className="flex min-w-0 flex-col gap-1 wrap-break-words">
                             <p className="uppercase text-label-num-sm text-muted">Billed To</p>
                             {client.company ? (
                                 <p className="text-body-md font-semibold text-on-surface">{client.company}</p>
@@ -236,7 +236,7 @@ export default function InvoicePreview({
                     ) : null}
                 </div>
                 <div>
-                    <div className="grid grid-cols-[minmax(80px,1fr)_34px_62px_73px] gap-1.25 bg-surface-container-low p-2 font-mono text-[9px] tracking-wider text-muted">
+                    <div className="grid grid-cols-[minmax(80px,1fr)_34px_62px_73px] gap-1.25 bg-surface-container p-2 font-mono font-medium text-[11px] tracking-wider text-muted uppercase">
                         <span>DESCRIPTION</span>
                         <span className="text-right">QTY</span>
                         <span className="text-right">RATE</span>
@@ -245,9 +245,9 @@ export default function InvoicePreview({
                     {displayItems.map((i) => (
                         <div
                             key={i.id}
-                            className="grid grid-cols-[minmax(80px,1fr)_34px_62px_73px] gap-1.25 border-b border-line px-2 py-3.25 text-[11px] text-on-surface"
+                            className="grid grid-cols-[minmax(80px,1fr)_34px_62px_73px] gap-1.25 border-b border-line px-2 py-3.25 font-medium font-[Inter] text-[11px] text-on-surface"
                         >
-                            <p className="min-w-0 break-words">{i.description}</p>
+                            <p className="min-w-0 wrap-break-words">{i.description}</p>
                             <span className="text-right">{i.quantity}</span>
                             <span className="text-right">{money(i.rate)}</span>
                             <b className="text-right">{money(i.quantity * i.rate)}</b>
@@ -255,26 +255,26 @@ export default function InvoicePreview({
                     ))}
                 </div>
                 <div className="mt-6.25 ml-auto grid w-60 max-w-full gap-2.5">
-                    <span className="flex justify-between text-[11px] text-on-surface-variant">
-                        Subtotal <b className="text-on-surface">{money(subtotal)}</b>
+                    <span className="flex justify-between text-[12px] text-on-surface-variant font-[Inter]">
+                        Subtotal <b className="text-on-surface font-semibold text-[14px]">{money(subtotal)}</b>
                     </span>
                     {discount?.enabled ? (
-                        <span className="flex justify-between text-[11px] text-on-surface-variant">
+                        <span className="flex justify-between text-[12px] text-on-surface-variant font-[Inter]">
                             Discount
                             {discount.type === "percentage" ? ` (${discount.value}%)` : ""}
                             {discount.reason.trim() ? ` · ${discount.reason.trim()}` : ""}{" "}
-                            <b className="text-on-surface">−{money(discountAmount)}</b>
+                            <b className="text-on-surface font-semibold text-[14px]">−{money(discountAmount)}</b>
                         </span>
                     ) : null}
                     {tax?.enabled ? (
-                        <span className="flex justify-between text-[11px] text-on-surface-variant">
+                        <span className="flex justify-between text-[12px] text-on-surface-variant font-[Inter]">
                             {tax.type} ({tax.rate}%){" "}
-                            <b className="text-on-surface">{money(taxAmount)}</b>
+                            <b className="text-on-surface font-semibold text-[14px]">{money(taxAmount)}</b>
                         </span>
                     ) : null}
-                    <strong className="flex justify-between border-t border-ink pt-3 text-sm text-on-surface">
-                        Total due <b>{money(total)}</b>
-                    </strong>
+                    <div className="flex items-center justify-between p-3 text-sm text-on-surface bg-surface-container-low rounded-sm font-mono">
+                        Total due: <b className="font-mono font-bold text-[28px] text-primary">{money(total)}</b>
+                    </div>
                     <div className="flex flex-col items-end py-1.5 px-3 bg-surface-container-low/70 rounded-sm">
                         <p className="uppercase text-[10px] text-muted tracking-wider">Amount in words:</p>
                         <p className="text-right text-[11px] font-medium text-on-surface-variant leading-4.25">{amountInWords}</p>

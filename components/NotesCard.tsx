@@ -1,5 +1,6 @@
 import type { ChangeEvent } from "react";
 import { SAMPLE_NOTES } from "@/lib/sample-invoice";
+import { TextAlignStart } from "lucide-react";
 
 type NotesCardProps = {
     value?: string;
@@ -12,10 +13,13 @@ export default function NotesCard({ value, onChange }: NotesCardProps) {
     };
 
     return (
-        <section className="rounded-lg bg-white p-6 shadow-[0_1px_1px_rgb(0_0_0/0.05)] max-sm:p-4">
-            <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-headline-sm text-on-surface">⌁ Notes &amp; Payment Details</h2>
-                <span className="rounded-xs bg-[#f2f2f5] px-2 py-0.5 font-serif text-[11px] tracking-wider text-muted">
+        <section className="flex flex-col rounded-sm bg-surface-container-low p-4 gap-2 border border-line shadow-[0_1px_1px_rgb(0_0_0/0.05)] max-sm:p-4">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                    <TextAlignStart stroke="var(--primary)" />
+                    <h2 className="text-headline-sm text-on-surface">Notes &amp; Payment Details</h2>
+                </div>
+                <span className="rounded-xs bg-primary/10 px-2 py-0.5 font-serif text-[11px] tracking-wider text-muted">
                     OPTIONAL
                 </span>
             </div>

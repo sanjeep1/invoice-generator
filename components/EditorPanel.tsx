@@ -1,4 +1,4 @@
-import ClientSelect from "@/components/ClientSelect";
+import ClientSave from "@/components/ClientSave";
 import DetailsCard from "@/components/DetailsCard";
 import LineItemsCard from "@/components/LineItemsCard";
 import LogoUpload from "@/components/LogoUpload";
@@ -88,10 +88,11 @@ export default function EditorPanel({
                     icon={<Building2 stroke="var(--primary)" size={18} />}
                     side="Recipient"
                     media={
-                        // Saved-client choice fills the company-name field.
-                        <ClientSelect
-                            value={details.clientCompany || undefined}
-                            onChange={(client) => onDetailsChange({ clientCompany: client })}
+                        // Saved-client choice fills all client fields; typing a
+                        // new company name enables the Save Client button.
+                        <ClientSave
+                            details={details}
+                            onFillClient={onDetailsChange}
                         />
                     }
                     value={details}

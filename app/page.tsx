@@ -10,7 +10,7 @@ import { downloadInvoicePdf, type PdfExportInput } from "@/lib/export-pdf";
 import { buildShareSubject } from "@/lib/share-invoice";
 import { validateInvoice } from "@/lib/validation";
 import type { BankAccountDetails, DiscountConfig, InvoiceDetails, InvoiceItem, InvoiceMeta, TaxConfig } from "@/types/invoice";
-import { SAMPLE_ITEMS } from "@/lib/sample-invoice";
+// import { SAMPLE_ITEMS } from "@/lib/sample-invoice";
 
 // Local-time ISO date (yyyy-mm-dd) for the date input. Built manually to
 // avoid the UTC-day shift of `toISOString`.
