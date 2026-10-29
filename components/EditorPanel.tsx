@@ -1,5 +1,6 @@
 import ClientSave from "@/components/ClientSave";
 import DetailsCard from "@/components/DetailsCard";
+import IssuerSave from "@/components/IssuerSave";
 import LineItemsCard from "@/components/LineItemsCard";
 import LogoUpload from "@/components/LogoUpload";
 import MetadataCard from "@/components/MetadataCard";
@@ -63,10 +64,18 @@ export default function EditorPanel({
                     icon={<User stroke="var(--primary)" size={18} />}
                     side="Sender"
                     media={
-                        <LogoUpload
-                            value={details.senderLogo}
-                            onChange={(logo) => onDetailsChange({ senderLogo: logo })}
-                        />
+                        <div className="flex flex-col gap-2">
+                            <LogoUpload
+                                value={details.senderLogo}
+                                onChange={(logo) => onDetailsChange({ senderLogo: logo })}
+                            />
+                            {/* Saved-issuer choice fills the sender fields and
+                                logo; editing them lets the profile be updated. */}
+                            <IssuerSave
+                                details={details}
+                                onFillIssuer={onDetailsChange}
+                            />
+                        </div>
                     }
                     value={details}
                     onChange={onDetailsChange}

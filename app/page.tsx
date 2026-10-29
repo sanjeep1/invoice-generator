@@ -8,6 +8,13 @@ import InvoicePreview from "@/components/InvoicePreview";
 import UtilityBar from "@/components/UtilityBar";
 import { Eye, Pencil } from "lucide-react";
 import { downloadInvoicePdf, type PdfExportInput } from "@/lib/export-pdf";
+import {
+    loadInvoiceHistory,
+    persistInvoiceHistory,
+    upsertInvoiceHistory,
+    type InvoiceHistoryEntry,
+    type InvoiceSnapshot,
+} from "@/lib/invoice-history";
 import { buildShareSubject } from "@/lib/share-invoice";
 import { validateInvoice } from "@/lib/validation";
 import type { BankAccountDetails, DiscountConfig, InvoiceDetails, InvoiceItem, InvoiceMeta, TaxConfig } from "@/types/invoice";
@@ -48,6 +55,9 @@ export default function Home() {
         clientAddress: "",
     });
     const [notes, setNotes] = useState("");
+    const [history, setHistory] = useState<InvoiceHistoryEntry[]>(() =>
+        loadInvoiceHistory(),
+    );
     // Discount/tax config lives here so the editor controls and the preview
     // totals stay in sync. Toggling them doesn't leave sample mode.
     const [discount, setDiscount] = useState<DiscountConfig>({
@@ -210,8 +220,55 @@ export default function Home() {
         showSample: !hasEdited,
     };
 
+    // Each export or share archives a snapshot so the invoice is available
+    // later even after the editor is reset. Saving the same invoice number
+    // updates its existing history entry.
+    const saveInvoiceToHistory = (): boolean => {
+        const snapshot: InvoiceSnapshot = {
+            items,
+            meta,
+            details,
+            notes,
+            bankDetails,
+            discount,
+            tax,
+        };
+        const next = upsertInvoiceHistory(loadInvoiceHistory(), snapshot);
+        if (!persistInvoiceHistory(next)) return false;
+        setHistory(next);
+        return true;
+    };
+
+    const deleteHistoryInvoice = (id: string) => {
+        const next = loadInvoiceHistory().filter((entry) => entry.id !== id);
+        persistInvoiceHistory(next);
+        setHistory(next);
+    };
+
+    const loadHistoryInvoice = (entry: InvoiceHistoryEntry) => {
+        const snapshot = entry.snapshot;
+        setItems(snapshot.items);
+        setMeta(snapshot.meta);
+        setDetails(snapshot.details);
+        setNotes(snapshot.notes);
+        setBankDetails(snapshot.bankDetails);
+        setDiscount(
+            snapshot.discount ?? {
+                enabled: false,
+                type: "percentage",
+                value: 10,
+                reason: "",
+            },
+        );
+        setTax(snapshot.tax ?? { enabled: false, type: "VAT", rate: 13 });
+        setHasEdited(true);
+    };
+
     // Direct vector-PDF download — no print dialog.
-    const handleExportPdf = () => downloadInvoicePdf(invoice);
+    const handleExportPdf = () => {
+        downloadInvoicePdf(invoice);
+        saveInvoiceToHistory();
+    };
 
     // Required-field gate for export/share. Recomputed each render; cheap.
     const missingFields = validateInvoice({ items, meta, details, bankDetails });
@@ -235,6 +292,10 @@ export default function Home() {
                 missingFields={missingFields}
                 invoice={invoice}
                 shareSubject={buildShareSubject({ meta, showSample: !hasEdited })}
+                history={history}
+                onRecordInvoice={saveInvoiceToHistory}
+                onLoadInvoice={loadHistoryInvoice}
+                onDeleteInvoice={deleteHistoryInvoice}
             />
             <UtilityBar />
             <div
