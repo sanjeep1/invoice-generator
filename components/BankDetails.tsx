@@ -2,6 +2,7 @@ import { Building2, QrCode, Upload, X } from "lucide-react";
 import jsQR from "jsqr";
 import { useRef, useState, type ChangeEvent } from "react";
 import Field from "@/components/Field";
+import PaymentSave from "@/components/PaymentSave";
 import type { BankAccountDetails } from "@/types/invoice";
 import Image from "next/image";
 
@@ -117,7 +118,7 @@ export default function BankDetails({ value, onChange }: BankDetailsProps) {
 
     return (
         <section className="flex flex-col gap-4 rounded-lg bg-white p-6 shadow-[0_1px_2px_0_rgba(0, 0, 0, 0.05)] max-sm:p-4">
-            <div className="flex flex-wrap justify-between gap-2 border-b border-surface-container pb-2">
+            <div className="flex flex-wrap justify-between gap-2 pb-2">
                 <div className="flex items-center gap-2">
                     <Building2 className="h-5 w-5" stroke="var(--primary)" />
                     <h2 className="text-headline-sm text-on-surface">
@@ -174,6 +175,12 @@ export default function BankDetails({ value, onChange }: BankDetailsProps) {
                             value={details.paymentReference}
                             onChange={handleChange("paymentReference")}
                             autoComplete="off"
+                        />
+                    </div>
+                    <div className="col-span-2 max-md:col-span-1">
+                        <PaymentSave
+                            details={details}
+                            onFillPayment={(patch) => onChange?.(patch)}
                         />
                     </div>
                 </div>

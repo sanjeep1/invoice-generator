@@ -109,7 +109,7 @@ export default function EditorPanel({
                     fields={[
                         { label: "Client or Company Name", fieldKey: "clientCompany", placeholder: SAMPLE_DETAILS.clientCompany, required: true },
                         { label: "Contact Person", fieldKey: "clientName", placeholder: SAMPLE_DETAILS.clientName },
-                        { label: "Email", fieldKey: "clientEmail", placeholder: SAMPLE_DETAILS.clientEmail, required: true },
+                        { label: "Email", fieldKey: "clientEmail", placeholder: SAMPLE_DETAILS.clientEmail, required: false },
                         { label: "Phone", fieldKey: "clientPhone", type: "tel", placeholder: SAMPLE_DETAILS.clientPhone },
                         { label: "Tax / PAN / VAT ID", fieldKey: "clientTaxId", placeholder: SAMPLE_DETAILS.clientTaxId },
                         { label: "Country / City", fieldKey: "clientAddress", placeholder: SAMPLE_DETAILS.clientAddress },

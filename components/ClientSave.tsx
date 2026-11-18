@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { BookmarkCheck, Contact2 } from "lucide-react";
 import {
-    loadSavedClients,
+    getSavedClientsServerSnapshot,
+    getSavedClientsSnapshot,
     persistSavedClients,
+    subscribeSavedClients,
     type SavedClient,
 } from "@/lib/saved-clients";
 import type { InvoiceDetails } from "@/types/invoice";
@@ -15,7 +17,11 @@ type ClientSaveProps = {
 };
 
 export default function ClientSave({ details, onFillClient }: ClientSaveProps) {
-    const [saved, setSaved] = useState<SavedClient[]>(() => loadSavedClients());
+    const saved = useSyncExternalStore(
+        subscribeSavedClients,
+        getSavedClientsSnapshot,
+        getSavedClientsServerSnapshot,
+    );
     const [justSaved, setJustSaved] = useState(false);
 
     useEffect(() => {
@@ -66,7 +72,6 @@ export default function ClientSave({ details, onFillClient }: ClientSaveProps) {
             createdAt: Date.now(),
         };
         const next = [...saved, entry];
-        setSaved(next);
         persistSavedClients(next);
         setJustSaved(true);
     };

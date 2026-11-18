@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useSyncExternalStore, useState } from "react";
 import EditorPanel from "@/components/EditorPanel";
 // import ExportDrawer from "@/components/ExportDrawer";
 import Footer from "@/components/Footer";
@@ -9,8 +9,10 @@ import UtilityBar from "@/components/UtilityBar";
 import { Eye, Pencil } from "lucide-react";
 import { downloadInvoicePdf, type PdfExportInput } from "@/lib/export-pdf";
 import {
-    loadInvoiceHistory,
+    getInvoiceHistoryServerSnapshot,
+    getInvoiceHistorySnapshot,
     persistInvoiceHistory,
+    subscribeInvoiceHistory,
     upsertInvoiceHistory,
     type InvoiceHistoryEntry,
     type InvoiceSnapshot,
@@ -29,13 +31,28 @@ function todayISO(): string {
     return `${now.getFullYear()}-${month}-${day}`;
 }
 
+function emptyItem(id: string = String(Date.now())): InvoiceItem {
+    return { id, description: "", quantity: 1, rate: 0 };
+}
+
+const subscribeNoop = () => () => {};
+const getServerToday = () => "";
+
+// The current date exists only in the browser. useSyncExternalStore keeps the
+// hydrated value out of the server HTML instead of mismatching on first render.
+function useTodayISO(): string {
+    return useSyncExternalStore(subscribeNoop, todayISO, getServerToday);
+}
+
 export default function Home() {
-    // Editor fields start empty so placeholder hints show; the preview
-    // falls back to lib/sample-invoice content until the user types.
-    const [items, setItems] = useState<InvoiceItem[]>([{ id: "1", description: "", quantity: 1, rate: 0 }]);
+    const today = useTodayISO();
+
+    // Editor fields start empty so placeholder hints show; the preview uses
+    // sample content, keeping it for required fields once editing starts.
+    const [items, setItems] = useState<InvoiceItem[]>(() => [emptyItem("1")]);
     const [meta, setMeta] = useState<InvoiceMeta>(() => ({
         invoiceNumber: "",
-        issueDate: todayISO(),
+        issueDate: "",
         paymentTerms: "",
         currency: "",
     }));
@@ -55,8 +72,10 @@ export default function Home() {
         clientAddress: "",
     });
     const [notes, setNotes] = useState("");
-    const [history, setHistory] = useState<InvoiceHistoryEntry[]>(() =>
-        loadInvoiceHistory(),
+    const history = useSyncExternalStore(
+        subscribeInvoiceHistory,
+        getInvoiceHistorySnapshot,
+        getInvoiceHistoryServerSnapshot,
     );
     // Discount/tax config lives here so the editor controls and the preview
     // totals stay in sync. Toggling them doesn't leave sample mode.
@@ -70,7 +89,8 @@ export default function Home() {
         enabled: false,
         type: "VAT",
         rate: 13,
-    }); const [bankDetails, setBankDetails] = useState<BankAccountDetails>({
+    });
+    const [bankDetails, setBankDetails] = useState<BankAccountDetails>({
         accountHolder: "",
         bankAndBranch: "",
         accountNumber: "",
@@ -79,17 +99,18 @@ export default function Home() {
         qrImage: "",
     });
 
-    // Once the user edits anything, the preview leaves sample mode: empty
-    // fields then hide instead of falling back to sample content.
+    // Once the user edits anything, optional empty fields hide; required
+    // fields still fall back to sample content so the preview stays complete.
     const [hasEdited, setHasEdited] = useState(false);
     const markEdited = () => setHasEdited(true);
 
+    // Empty issueDate means "use today", which keeps the server snapshot
+    // stable while still showing the browser's local date after hydration.
+    const resolvedMeta = { ...meta, issueDate: meta.issueDate || today };
+
     const addItem = () => {
         markEdited();
-        setItems([
-            ...items,
-            { id: String(Date.now()), description: "", quantity: 1, rate: 0 },
-        ]);
+        setItems([...items, emptyItem()]);
     };
 
     // String inputs for qty/rate coerce to numbers; description passes through.
@@ -168,7 +189,7 @@ export default function Home() {
 
     // Clears every entered value and returns the preview to sample mode.
     const resetAll = () => {
-        setItems([]);
+        setItems([emptyItem()]);
         setMeta({
             invoiceNumber: "",
             issueDate: todayISO(),
@@ -211,7 +232,7 @@ export default function Home() {
     // share actions (the PDF is now what gets shared, not the text summary).
     const invoice: PdfExportInput = {
         items,
-        meta,
+        meta: resolvedMeta,
         details,
         notes,
         bankDetails,
@@ -226,23 +247,20 @@ export default function Home() {
     const saveInvoiceToHistory = (): boolean => {
         const snapshot: InvoiceSnapshot = {
             items,
-            meta,
+            meta: resolvedMeta,
             details,
             notes,
             bankDetails,
             discount,
             tax,
         };
-        const next = upsertInvoiceHistory(loadInvoiceHistory(), snapshot);
-        if (!persistInvoiceHistory(next)) return false;
-        setHistory(next);
-        return true;
+        const next = upsertInvoiceHistory(history, snapshot);
+        return persistInvoiceHistory(next);
     };
 
     const deleteHistoryInvoice = (id: string) => {
-        const next = loadInvoiceHistory().filter((entry) => entry.id !== id);
+        const next = history.filter((entry) => entry.id !== id);
         persistInvoiceHistory(next);
-        setHistory(next);
     };
 
     const loadHistoryInvoice = (entry: InvoiceHistoryEntry) => {
@@ -271,7 +289,7 @@ export default function Home() {
     };
 
     // Required-field gate for export/share. Recomputed each render; cheap.
-    const missingFields = validateInvoice({ items, meta, details, bankDetails });
+    const missingFields = validateInvoice({ items, meta: resolvedMeta, details, bankDetails });
 
     // Small screens show Edit / Preview as tabs instead of the side-by-side
     // desktop grid. Desktop (lg+) always renders both columns.
@@ -291,7 +309,7 @@ export default function Home() {
                 onExportPdf={handleExportPdf}
                 missingFields={missingFields}
                 invoice={invoice}
-                shareSubject={buildShareSubject({ meta, showSample: !hasEdited })}
+                shareSubject={buildShareSubject({ meta: resolvedMeta, showSample: !hasEdited })}
                 history={history}
                 onRecordInvoice={saveInvoiceToHistory}
                 onLoadInvoice={loadHistoryInvoice}
@@ -333,7 +351,7 @@ export default function Home() {
                         onRemoveItem={removeItem}
                         onMoveItem={moveItem}
                         onReorderItem={reorderItem}
-                        meta={meta}
+                        meta={resolvedMeta}
                         onMetaChange={updateMeta}
                         details={details}
                         onDetailsChange={updateDetails}
@@ -350,7 +368,7 @@ export default function Home() {
                 <div className={`min-w-0 ${mobileTab === "preview" ? "" : "max-lg:hidden"} print:block`}>
                     <InvoicePreview
                         items={items}
-                        meta={meta}
+                        meta={resolvedMeta}
                         details={details}
                         notes={notes}
                         bankDetails={bankDetails}

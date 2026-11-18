@@ -3,7 +3,15 @@ import Image from "next/image";
 import { formatCurrency, numberToWords } from "@/lib/utils";
 import { computeTotals, parseCurrencyCode } from "@/lib/invoice-totals";
 import { formatDueDate, formatPaperDate } from "@/lib/invoice-dates";
-import { SAMPLE_DETAILS, SAMPLE_DISCOUNT, SAMPLE_ITEMS, SAMPLE_LOGO, SAMPLE_META, SAMPLE_NOTES, SAMPLE_TAX } from "@/lib/sample-invoice";
+import {
+    SAMPLE_DETAILS,
+    SAMPLE_DISCOUNT,
+    SAMPLE_ITEMS,
+    SAMPLE_LOGO,
+    SAMPLE_META,
+    SAMPLE_NOTES,
+    SAMPLE_TAX,
+} from "@/lib/sample-invoice";
 import type {
     BankAccountDetails,
     DiscountConfig,
@@ -27,6 +35,10 @@ type InvoicePreviewProps = {
 
 const paperLabel = "font-inter text-[12px] tracking-wider text-muted";
 const paperValue = "text-[11px] text-on-surface";
+// Shared by the header and every row so the columns stay aligned. Flexible
+// tracks keep long descriptions and currency strings inside the sheet.
+const itemGrid =
+    "grid grid-cols-[minmax(0,1fr)_minmax(2.5rem,12%)_minmax(3.5rem,18%)_minmax(4rem,22%)] gap-x-1.25";
 
 export default function InvoicePreview({
     items,
@@ -38,61 +50,86 @@ export default function InvoicePreview({
     discount,
     tax,
 }: InvoicePreviewProps) {
-    // Sample mode (before the user edits anything): empty editor fields fall
-    // back to sample content so the sheet shows a full example invoice. Once
-    // editing starts, empty fields resolve to "" and their lines hide.
+    // Optional fields show samples only until the user starts editing. Required
+    // fields keep their sample fallback so the sheet still shows a complete,
+    // readable invoice while required inputs are being filled in.
     const pick = (raw: string | undefined, sample: string) =>
         raw?.trim() || (showSample ? sample : "");
+    const pickRequired = (raw: string | undefined, sample: string) =>
+        raw?.trim() || sample;
     const resolvedMeta = {
-        invoiceNumber: pick(meta?.invoiceNumber, SAMPLE_META.invoiceNumber),
-        issueDate: pick(meta?.issueDate, SAMPLE_META.issueDate),
+        invoiceNumber: pickRequired(
+            meta?.invoiceNumber,
+            SAMPLE_META.invoiceNumber,
+        ),
+        issueDate: pickRequired(meta?.issueDate, SAMPLE_META.issueDate),
         paymentTerms: pick(meta?.paymentTerms, SAMPLE_META.paymentTerms),
-        currency: pick(meta?.currency, SAMPLE_META.currency),
+        currency: pickRequired(meta?.currency, SAMPLE_META.currency),
     };
     const sender = {
-        name: pick(details?.senderName, SAMPLE_DETAILS.senderName),
+        name: pickRequired(details?.senderName, SAMPLE_DETAILS.senderName),
         business: pick(details?.senderBusiness, SAMPLE_DETAILS.senderBusiness),
-        email: pick(details?.senderEmail, SAMPLE_DETAILS.senderEmail),
+        email: pickRequired(details?.senderEmail, SAMPLE_DETAILS.senderEmail),
         country: pick(details?.senderCountry, SAMPLE_DETAILS.senderCountry),
         taxID: pick(details?.senderTaxId, SAMPLE_DETAILS.senderTaxId),
     };
     const client = {
-        company: pick(details?.clientCompany, SAMPLE_DETAILS.clientCompany),
+        company: pickRequired(
+            details?.clientCompany,
+            SAMPLE_DETAILS.clientCompany,
+        ),
         name: pick(details?.clientName, SAMPLE_DETAILS.clientName),
         email: pick(details?.clientEmail, SAMPLE_DETAILS.clientEmail),
         address: pick(details?.clientAddress, SAMPLE_DETAILS.clientAddress),
         taxId: pick(details?.clientTaxId, SAMPLE_DETAILS.clientTaxId),
     };
     const resolvedNotes = pick(notes, SAMPLE_NOTES);
-    // Sample letterhead logo until the user uploads one; hides once editing
-    // starts with no logo, matching the other sample fallbacks.
-    const displayLogo = details?.senderLogo?.trim() || (showSample ? SAMPLE_LOGO : "");
-    // Line items are user-owned once they have meaningful content
-    // (a description or a rate > 0); the default qty=1 alone doesn't count.
+    // Logo is optional, so its sample hides once editing starts with no upload.
+    const displayLogo =
+        details?.senderLogo?.trim() || (showSample ? SAMPLE_LOGO : "");
+    // Line items are required: keep the sample rows until the user enters
+    // meaningful content (a description or a rate > 0); qty=1 alone doesn't count.
     const hasRealItems = useMemo(
         () => items.some((i) => i.description.trim() || i.rate > 0),
         [items],
     );
     const displayItems = useMemo(
-        () => (hasRealItems ? items : showSample ? SAMPLE_ITEMS : []),
-        [hasRealItems, items, showSample],
+        () => (hasRealItems ? items : SAMPLE_ITEMS),
+        [hasRealItems, items],
     );
 
-    // Structured bank rows: label/value pairs (with the sample fallback when
-    // every bank field is empty) rendered as a definition grid in the footer.
+    // Structured bank rows: with no real values, the required account-number
+    // sample stays after editing while the optional SWIFT sample drops.
     const bankRows: { label: string; value: string }[] = (() => {
         const rows = [
-            bankDetails?.accountHolder && { label: "Account holder", value: bankDetails.accountHolder },
-            bankDetails?.bankAndBranch && { label: "Bank & branch", value: bankDetails.bankAndBranch },
-            bankDetails?.accountNumber && { label: "Account number", value: bankDetails.accountNumber },
-            bankDetails?.swiftCode && { label: "SWIFT / BIC", value: bankDetails.swiftCode },
-            bankDetails?.paymentReference && { label: "Reference", value: bankDetails.paymentReference },
+            bankDetails?.accountHolder && {
+                label: "Account holder",
+                value: bankDetails.accountHolder,
+            },
+            bankDetails?.bankAndBranch && {
+                label: "Bank & branch",
+                value: bankDetails.bankAndBranch,
+            },
+            bankDetails?.accountNumber && {
+                label: "Account number",
+                value: bankDetails.accountNumber,
+            },
+            bankDetails?.swiftCode && {
+                label: "SWIFT / BIC",
+                value: bankDetails.swiftCode,
+            },
+            bankDetails?.paymentReference && {
+                label: "Reference",
+                value: bankDetails.paymentReference,
+            },
         ].filter(Boolean) as { label: string; value: string }[];
         return rows.length > 0
             ? rows
             : [
                   { label: "Account number", value: "0037000012345678" },
-                  { label: "SWIFT / BIC", value: "COBADEFFXXX" },
+                  ...(showSample
+                      ? [{ label: "SWIFT / BIC", value: "COBADEFFXXX" }]
+                      : []),
               ];
     })();
     const currencyCode = parseCurrencyCode(resolvedMeta.currency);
@@ -107,19 +144,40 @@ export default function InvoicePreview({
     const { subtotal, discountAmount, taxAmount, total } = useMemo(() => {
         // Sample mode shows example discount/tax rows until the user
         // enables the real controls; afterwards only enabled configs print.
-        const resolvedDiscount = discount?.enabled ? discount : showSample ? SAMPLE_DISCOUNT : undefined;
-        const resolvedTax = tax?.enabled ? tax : showSample ? SAMPLE_TAX : undefined;
+        const resolvedDiscount = discount?.enabled
+            ? discount
+            : showSample
+              ? SAMPLE_DISCOUNT
+              : undefined;
+        const resolvedTax = tax?.enabled
+            ? tax
+            : showSample
+              ? SAMPLE_TAX
+              : undefined;
         return computeTotals(displayItems, resolvedDiscount, resolvedTax);
     }, [displayItems, discount, tax, showSample]);
     // Resolved configs drive the totals rows so the preview matches PDF/share.
-    const displayDiscount = discount?.enabled ? discount : showSample ? SAMPLE_DISCOUNT : undefined;
+    const displayDiscount = discount?.enabled
+        ? discount
+        : showSample
+          ? SAMPLE_DISCOUNT
+          : undefined;
     const displayTax = tax?.enabled ? tax : showSample ? SAMPLE_TAX : undefined;
     const amountInWords = numberToWords(total, currencyCode);
     const issuedLabel = formatPaperDate(resolvedMeta.issueDate);
-    const dueLabel = formatDueDate(resolvedMeta.issueDate, resolvedMeta.paymentTerms);
-    const hasMetaRows = Boolean(issuedLabel || dueLabel || resolvedMeta.currency);
+    const dueLabel = formatDueDate(
+        resolvedMeta.issueDate,
+        resolvedMeta.paymentTerms,
+    );
+    const hasMetaRows = Boolean(
+        issuedLabel || dueLabel || resolvedMeta.currency,
+    );
     const hasClient = Boolean(
-        client.company || client.name || client.email || client.address || client.taxId,
+        client.company ||
+        client.name ||
+        client.email ||
+        client.address ||
+        client.taxId,
     );
 
     return (
@@ -150,62 +208,96 @@ export default function InvoicePreview({
                                 />
                             </span>
                         ) : null}
-                        <div className="flex min-w-0 flex-col gap-0.5 wrap-break-words">
+                        <div className="flex min-w-0 flex-col gap-0.5 wrap-break-word">
                             {sender.business ? (
-                                <p className="text-[17px] leading-6 font-bold tracking-tight text-on-surface">{sender.business}</p>
+                                <p className="text-[17px] leading-6 font-bold tracking-tight text-on-surface">
+                                    {sender.business}
+                                </p>
                             ) : null}
                             {sender.name ? (
-                                <p className="text-[13px] leading-5 font-medium text-on-surface-variant">{sender.name}</p>
+                                <p className="text-[13px] leading-5 font-medium text-on-surface-variant">
+                                    {sender.name}
+                                </p>
                             ) : null}
                             {sender.email || sender.country ? (
                                 <div className="mt-1.5 flex flex-col gap-1">
                                     {sender.email ? (
                                         <p className="flex items-center gap-1.5 text-[12px] leading-4 text-muted">
-                                            <Mail size={12} aria-hidden="true" className="shrink-0" />
-                                            <span className="min-w-0 truncate">{sender.email}</span>
+                                            <Mail
+                                                size={12}
+                                                aria-hidden="true"
+                                                className="shrink-0"
+                                            />
+                                            <span className="min-w-0 truncate">
+                                                {sender.email}
+                                            </span>
                                         </p>
                                     ) : null}
                                     {sender.country ? (
                                         <p className="flex items-center gap-1.5 text-[12px] leading-4 text-muted">
-                                            <MapPin size={12} aria-hidden="true" className="shrink-0" />
-                                            <span className="min-w-0 truncate">{sender.country}</span>
+                                            <MapPin
+                                                size={12}
+                                                aria-hidden="true"
+                                                className="shrink-0"
+                                            />
+                                            <span className="min-w-0 truncate">
+                                                {sender.country}
+                                            </span>
                                         </p>
                                     ) : null}
                                 </div>
                             ) : null}
                         </div>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1.5 text-right">
-                        <p className="rounded-sm bg-surface-container-high px-3 py-1 text-label-num-sm uppercase">INVOICE</p>
+                    <div className="flex min-w-0 flex-col items-end gap-1.5 text-right">
+                        <p className="rounded-sm bg-surface-container-high px-3 py-1 text-label-num-sm uppercase">
+                            INVOICE
+                        </p>
                         {resolvedMeta.invoiceNumber ? (
-                            <p className="text-xl font-bold tracking-tight text-on-surface tabular-nums">{resolvedMeta.invoiceNumber}</p>
+                            <p className="min-w-0 text-xl font-bold tracking-tight wrap-anywhere text-on-surface tabular-nums">
+                                {resolvedMeta.invoiceNumber}
+                            </p>
                         ) : null}
                     </div>
                 </div>
                 <div className="pb-6 border-b border-line flex flex-wrap justify-between gap-x-6 gap-y-4">
                     {hasClient ? (
-                        <div className="flex min-w-0 flex-col gap-1 wrap-break-words">
-                            <p className="uppercase text-label-num-sm text-muted">Billed To</p>
+                        <div className="flex min-w-0 flex-col gap-1 wrap-break-word">
+                            <p className="uppercase text-label-num-sm text-muted">
+                                Billed To
+                            </p>
                             {client.company ? (
-                                <p className="text-body-md font-semibold text-on-surface">{client.company}</p>
+                                <p className="text-body-md font-semibold text-on-surface">
+                                    {client.company}
+                                </p>
                             ) : null}
                             {client.name ? (
-                                <p className="text-label-num-sm text-on-surface-variant">{client.name}</p>
+                                <p className="text-label-num-sm text-on-surface-variant">
+                                    {client.name}
+                                </p>
                             ) : null}
                             {client.email ? (
-                                <p className="text-label-num-sm text-primary">{client.email}</p>
+                                <p className="text-label-num-sm text-primary">
+                                    {client.email}
+                                </p>
                             ) : null}
                             {client.address ? (
-                                <p className="text-[11px] font-medium text-muted">{client.address}</p>
+                                <p className="text-[11px] font-medium text-muted">
+                                    {client.address}
+                                </p>
                             ) : null}
                             {client.taxId ? (
-                                <p className="text-[11px] font-medium text-muted">TaxID: {client.taxId}</p>
+                                <p className="text-[11px] font-medium text-muted">
+                                    TaxID: {client.taxId}
+                                </p>
                             ) : null}
                         </div>
                     ) : null}
                     {hasMetaRows ? (
                         <div className="flex flex-col gap-1 items-end">
-                            <p className="uppercase text-label-num-sm text-muted">Invoice Details</p>
+                            <p className="uppercase text-label-num-sm text-muted">
+                                Invoice Details
+                            </p>
                             {issuedLabel ? (
                                 <div className="flex gap-2 items-center justify-center">
                                     <span className={paperLabel}>Issued:</span>
@@ -220,62 +312,106 @@ export default function InvoicePreview({
                             ) : null}
                             {resolvedMeta.currency ? (
                                 <div className="flex gap-2 items-center justify-center">
-                                    <span className={paperLabel}>Currency:</span>
-                                    <b className={paperValue}>{resolvedMeta.currency}</b>
+                                    <span className={paperLabel}>
+                                        Currency:
+                                    </span>
+                                    <b className={paperValue}>
+                                        {resolvedMeta.currency}
+                                    </b>
                                 </div>
                             ) : null}
                         </div>
                     ) : null}
                 </div>
-                <div>
-                    <div className="grid grid-cols-[minmax(80px,1fr)_34px_62px_73px] gap-1.25 bg-surface-container p-2 font-mono font-medium text-[11px] tracking-wider text-muted uppercase">
-                        <span>DESCRIPTION</span>
-                        <span className="text-right">QTY</span>
-                        <span className="text-right">RATE</span>
-                        <span className="text-right">AMOUNT</span>
+                <div className="min-w-0">
+                    <div
+                        className={`${itemGrid} bg-surface-container p-2 font-mono font-medium text-[11px] tracking-wider text-muted uppercase`}
+                    >
+                        <span className="min-w-0">DESCRIPTION</span>
+                        <span className="min-w-0 text-right">QTY</span>
+                        <span className="min-w-0 text-right">RATE</span>
+                        <span className="min-w-0 text-right">AMOUNT</span>
                     </div>
                     {displayItems.map((i) => (
                         <div
                             key={i.id}
-                            className="grid grid-cols-[minmax(80px,1fr)_34px_62px_73px] gap-1.25 border-b border-line px-2 py-3.25 font-medium font-[Inter] text-[11px] text-on-surface"
+                            className={`${itemGrid} border-b border-line px-2 py-3.25 font-medium font-[Inter] text-[11px] text-on-surface print:break-inside-avoid`}
                         >
-                            <p className="min-w-0 wrap-break-words">{i.description}</p>
-                            <span className="text-right">{i.quantity}</span>
-                            <span className="text-right">{money(i.rate)}</span>
-                            <b className="text-right">{money(i.quantity * i.rate)}</b>
+                            <p className="min-w-0 wrap-break-word">
+                                {i.description}
+                            </p>
+                            <span className="min-w-0 text-right wrap-anywhere tabular-nums">
+                                {i.quantity}
+                            </span>
+                            <span className="min-w-0 text-right wrap-anywhere tabular-nums">
+                                {money(i.rate)}
+                            </span>
+                            <b className="min-w-0 text-right wrap-anywhere tabular-nums">
+                                {money(i.quantity * i.rate)}
+                            </b>
                         </div>
                     ))}
                 </div>
-                <div className="mt-6.25 ml-auto grid w-60 max-w-full gap-2.5">
-                    <span className="flex justify-between text-[12px] text-on-surface-variant font-[Inter]">
-                        Subtotal <b className="text-on-surface font-semibold text-[14px]">{money(subtotal)}</b>
+                <div className="mt-6.25 ml-auto grid w-70 max-w-full min-w-0 gap-2.5 print:break-inside-avoid">
+                    <span className="flex items-center justify-end gap-2 text-[12px] text-on-surface-variant font-[Inter]">
+                        <span className="min-w-0 wrap-break-word">
+                            Subtotal:
+                        </span>
+                        <b className="min-w-0 text-right wrap-anywhere font-semibold text-[14px] text-on-surface">
+                            {money(subtotal)}
+                        </b>
                     </span>
                     {displayDiscount ? (
-                        <span className="flex justify-between text-[12px] text-on-surface-variant font-[Inter]">
-                            Discount
-                            {displayDiscount.type === "percentage" ? ` (${displayDiscount.value}%)` : ""}
-                            {displayDiscount.reason.trim() ? ` · ${displayDiscount.reason.trim()}` : ""}{" "}
-                            <b className="text-on-surface font-semibold text-[14px]">−{money(discountAmount)}</b>
+                        <span className="flex items-center justify-end gap-2 text-[12px] text-on-surface-variant font-[Inter]">
+                            <span className="min-w-0 wrap-break-word">
+                                Discount
+                                {displayDiscount.type === "percentage"
+                                    ? ` (${displayDiscount.value}%):`
+                                    : ""}
+                                {displayDiscount.reason.trim()
+                                    ? ` · ${displayDiscount.reason.trim()}`
+                                    : ""}
+                            </span>
+                            <b className="min-w-0 text-right wrap-anywhere font-semibold text-[14px] text-on-surface">
+                                −{money(discountAmount)}
+                            </b>
                         </span>
                     ) : null}
                     {displayTax ? (
-                        <span className="flex justify-between text-[12px] text-on-surface-variant font-[Inter]">
-                            {displayTax.type} ({displayTax.rate}%){" "}
-                            <b className="text-on-surface font-semibold text-[14px]">{money(taxAmount)}</b>
+                        <span className="flex items-center justify-end gap-2 text-[12px] text-on-surface-variant font-[Inter]">
+                            <span className="min-w-0 wrap-break-word">
+                                {displayTax.type} ({displayTax.rate}%):
+                            </span>
+                            <b className="min-w-0 text-right wrap-anywhere font-semibold text-[14px] text-on-surface">
+                                {money(taxAmount)}
+                            </b>
                         </span>
                     ) : null}
-                    <div className="flex items-center justify-between p-3 text-sm text-on-surface bg-surface-container-low rounded-sm font-mono">
-                        Total due: <b className="font-mono font-bold text-[28px] text-primary">{money(total)}</b>
+                    <div className="flex items-center justify-between gap-2 p-3 text-sm text-on-surface bg-surface-container-low rounded-sm font-mono">
+                        <span className="shrink-0">Total due:</span>
+                        <b className="min-w-0 text-right font-mono font-bold text-[24px] leading-7 wrap-anywhere text-primary">
+                            {money(total)}
+                        </b>
                     </div>
                     <div className="flex flex-col items-end py-1.5 px-3 bg-surface-container-low/70 rounded-sm">
-                        <p className="uppercase text-[10px] text-muted tracking-wider">Amount in words:</p>
-                        <p className="text-right text-[11px] font-medium text-on-surface-variant leading-4.25">{amountInWords}</p>
+                        <p className="uppercase text-[10px] text-muted tracking-wider">
+                            Amount in words:
+                        </p>
+                        <p className="min-w-0 text-right wrap-break-word text-[11px] font-medium text-on-surface-variant leading-4.25">
+                            {amountInWords}
+                        </p>
                     </div>
                 </div>
-                <div className="overflow-hidden rounded-lg border border-line">
+                <div className="overflow-hidden rounded-lg border border-line print:break-inside-avoid">
                     <div className="flex items-center gap-2 border-b border-line bg-surface-container-low px-4 py-2.5">
-                        <Landmark size={14} aria-hidden="true" className="shrink-0 text-primary" />
-                        <p className="text-[12px] font-semibold text-on-surface">Payment Instructions</p>
+                        <Landmark
+                            size={14}
+                            aria-hidden="true"
+                            className="shrink-0 text-primary"
+                        />
+                        <p className="text-[12px] font-semibold text-on-surface">
+                            Payment Instructions
+                        </p>
                     </div>
                     <div className="flex items-start gap-5 px-4 py-3.5 max-sm:flex-col max-sm:gap-3">
                         <dl className="grid flex-1 grid-cols-2 gap-x-4 gap-y-3 max-sm:grid-cols-1">
@@ -284,7 +420,10 @@ export default function InvoicePreview({
                                     <dt className="text-[10px] font-medium tracking-wider text-muted uppercase">
                                         {row.label}
                                     </dt>
-                                    <dd className="mt-0.5 truncate text-[12.5px] font-semibold text-on-surface tabular-nums" title={row.value}>
+                                    <dd
+                                        className="mt-0.5 truncate text-[12.5px] font-semibold text-on-surface tabular-nums"
+                                        title={row.value}
+                                    >
                                         {row.value}
                                     </dd>
                                 </div>
@@ -309,12 +448,18 @@ export default function InvoicePreview({
                         <div className="flex flex-col gap-1.5 border-t border-line bg-surface-container-low/60 px-4 py-3">
                             {sender.taxID ? (
                                 <p className="text-[11px] text-on-surface-variant">
-                                    <span className="font-medium tracking-wider text-muted uppercase">Tax / PAN ID: </span>
-                                    <span className="font-semibold text-on-surface tabular-nums">{sender.taxID}</span>
+                                    <span className="font-medium tracking-wider text-muted uppercase">
+                                        Tax / PAN ID:{" "}
+                                    </span>
+                                    <span className="font-semibold text-on-surface tabular-nums">
+                                        {sender.taxID}
+                                    </span>
                                 </p>
                             ) : null}
                             {resolvedNotes ? (
-                                <p className="text-[11px] leading-4.5 text-muted italic">{resolvedNotes}</p>
+                                <p className="text-[11px] leading-4.5 text-muted italic">
+                                    {resolvedNotes}
+                                </p>
                             ) : null}
                         </div>
                     ) : null}

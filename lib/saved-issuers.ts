@@ -1,3 +1,5 @@
+import { createLocalStorageListStore } from "@/lib/local-storage-store";
+
 export interface SavedIssuer {
   id: string;
   name: string;
@@ -10,8 +12,6 @@ export interface SavedIssuer {
   createdAt: number;
   updatedAt: number;
 }
-
-const STORAGE_KEY = "invoxa:saved-issuers:v1";
 
 const TEXT_FIELDS = [
   "name",
@@ -36,26 +36,12 @@ export function issuerLabel(business: string, name: string): string {
   return business.trim() || name.trim();
 }
 
-// Reads saved issuers from localStorage. Safe to call during SSR (returns []).
-export function loadSavedIssuers(): SavedIssuer[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isSavedIssuer);
-  } catch {
-    return [];
-  }
-}
+const store = createLocalStorageListStore<SavedIssuer>("invoxa:saved-issuers:v1", (value) =>
+  Array.isArray(value) ? value.filter(isSavedIssuer) : [],
+);
 
-export function persistSavedIssuers(issuers: SavedIssuer[]): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(issuers));
-    return true;
-  } catch {
-    return false;
-  }
-}
+export const subscribeSavedIssuers = store.subscribe;
+export const getSavedIssuersSnapshot = store.getSnapshot;
+export const getSavedIssuersServerSnapshot = store.getServerSnapshot;
+export const loadSavedIssuers = store.getSnapshot;
+export const persistSavedIssuers = store.set;

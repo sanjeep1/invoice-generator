@@ -18,6 +18,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     return (
         <html lang="en">
             <body
+                suppressHydrationWarning
                 className={`${geistSans.variable} ${inter.variable} ${jetbrainsMono.variable}`}
             >
                 {children}

@@ -28,13 +28,14 @@ export function parseTermsDays(raw: string): number | null {
     return Number.isNaN(days) ? null : days;
 }
 
-// Due date = issue date + terms days; null when either is unparseable.
+// Due date = issue date + terms days; null when unparseable or out of range.
 export function formatDueDate(issueRaw: string, termsRaw: string): string | null {
     const issued = parseIssueDate(issueRaw);
     const days = parseTermsDays(termsRaw);
-    if (!issued || days === null) return null;
+    if (!issued || days === null || days > 365000) return null;
     const due = new Date(issued);
     due.setDate(due.getDate() + days);
+    if (Number.isNaN(due.getTime())) return null;
     return new Intl.DateTimeFormat("en-US", {
         month: "long",
         day: "2-digit",

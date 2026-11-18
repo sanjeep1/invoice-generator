@@ -1,3 +1,4 @@
+import { createLocalStorageListStore } from "@/lib/local-storage-store";
 import type {
     BankAccountDetails,
     DiscountConfig,
@@ -23,12 +24,6 @@ export interface InvoiceHistoryEntry {
     snapshot: InvoiceSnapshot;
 }
 
-const STORAGE_KEY = "invoxa:invoice-history:v1";
-
-// Snapshots can embed logo/QR data URLs, so the list is capped to keep
-// localStorage from filling up.
-const MAX_ENTRIES = 50;
-
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null;
 }
@@ -53,50 +48,32 @@ function isHistoryEntry(value: unknown): value is InvoiceHistoryEntry {
     );
 }
 
-// Reads invoice history from localStorage. Safe to call during SSR (returns []).
-export function loadInvoiceHistory(): InvoiceHistoryEntry[] {
-    if (typeof window === "undefined") return [];
-    try {
-        const raw = window.localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        const parsed: unknown = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return [];
-        return parsed.filter(isHistoryEntry);
-    } catch {
-        return [];
-    }
-}
+// Snapshots can embed logo/QR data URLs, so the list is capped to keep
+// localStorage from filling up.
+const MAX_ENTRIES = 50;
 
-// Returns false when storage is unavailable (blocked or full), so callers can
-// surface the failure instead of silently losing the entry.
-export function persistInvoiceHistory(entries: InvoiceHistoryEntry[]): boolean {
-    if (typeof window === "undefined") return false;
-    try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-        return true;
-    } catch {
-        return false;
-    }
-}
+const store = createLocalStorageListStore<InvoiceHistoryEntry>("invoxa:invoice-history:v1", (value) =>
+    Array.isArray(value) ? value.filter(isHistoryEntry) : [],
+);
+
+export const subscribeInvoiceHistory = store.subscribe;
+export const getInvoiceHistorySnapshot = store.getSnapshot;
+export const getInvoiceHistoryServerSnapshot = store.getServerSnapshot;
+export const loadInvoiceHistory = store.getSnapshot;
+export const persistInvoiceHistory = store.set;
 
 // Newest first. Re-saving an invoice with the same number replaces its earlier
 // entry instead of piling up duplicates; unnumbered invoices always append.
-export function upsertInvoiceHistory(
-    entries: InvoiceHistoryEntry[],
-    snapshot: InvoiceSnapshot,
-): InvoiceHistoryEntry[] {
+export function upsertInvoiceHistory(entries: InvoiceHistoryEntry[], snapshot: InvoiceSnapshot): InvoiceHistoryEntry[] {
     const number = snapshot.meta.invoiceNumber.trim().toLowerCase();
     const existing = number
         ? entries.find(
-              (entry) =>
-                  entry.snapshot.meta.invoiceNumber.trim().toLowerCase() === number,
+              (entry) => entry.snapshot.meta.invoiceNumber.trim().toLowerCase() === number,
           )
         : undefined;
     const now = Date.now();
     const entry: InvoiceHistoryEntry = {
-        id:
-            existing?.id ??
-            `invoice-${now}-${Math.random().toString(36).slice(2, 7)}`,
+        id: existing?.id ?? `invoice-${now}-${Math.random().toString(36).slice(2, 7)}`,
         savedAt: now,
         snapshot,
     };

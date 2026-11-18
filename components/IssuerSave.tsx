@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { BookmarkCheck, UserRound } from "lucide-react";
 import {
+    getSavedIssuersServerSnapshot,
+    getSavedIssuersSnapshot,
     issuerLabel,
-    loadSavedIssuers,
     persistSavedIssuers,
+    subscribeSavedIssuers,
     type SavedIssuer,
 } from "@/lib/saved-issuers";
 import type { InvoiceDetails } from "@/types/invoice";
@@ -16,7 +18,11 @@ type IssuerSaveProps = {
 };
 
 export default function IssuerSave({ details, onFillIssuer }: IssuerSaveProps) {
-    const [saved, setSaved] = useState<SavedIssuer[]>(() => loadSavedIssuers());
+    const saved = useSyncExternalStore(
+        subscribeSavedIssuers,
+        getSavedIssuersSnapshot,
+        getSavedIssuersServerSnapshot,
+    );
     const [justSaved, setJustSaved] = useState(false);
     const [saveError, setSaveError] = useState("");
 
@@ -84,7 +90,6 @@ export default function IssuerSave({ details, onFillIssuer }: IssuerSaveProps) {
             return;
         }
         setSaveError("");
-        setSaved(next);
         setJustSaved(true);
     };
 

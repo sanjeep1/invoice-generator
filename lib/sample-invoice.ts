@@ -1,8 +1,9 @@
 import type { DiscountConfig, InvoiceDetails, InvoiceItem, InvoiceMeta, TaxConfig } from "@/types/invoice";
 
 // Sample content shown in the live preview (and as editor placeholders)
-// while the corresponding form fields are still empty. Once the user types
-// into a field, the typed value takes over in the preview.
+// while the corresponding form fields are still empty. A typed value takes
+// over in the preview; required fields keep these samples until then, while
+// optional fields drop them once editing starts.
 export const SAMPLE_META: InvoiceMeta = {
     invoiceNumber: "INV-2026-001",
     issueDate: "2026-03-01",

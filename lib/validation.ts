@@ -41,7 +41,7 @@ export function getLineItemErrors(
 }
 
 // Mirrors the `required` markers in the editor: invoice setup, sender
-// name/email, client company/email, every line item, and bank routing.
+// name/email, client company, every line item, and bank routing.
 export function validateInvoice(input: ValidationInput): string[] {
     const { items, meta, details, bankDetails } = input;
     const missing: string[] = [];
@@ -54,8 +54,6 @@ export function validateInvoice(input: ValidationInput): string[] {
     if (!details.senderEmail.trim()) missing.push("Sender Email");
 
     if (!details.clientCompany.trim()) missing.push("Client / Company Name");
-    if (!details.clientEmail.trim()) missing.push("Client Email");
-
     if (items.length === 0) {
         missing.push("At least one line item");
     } else {
